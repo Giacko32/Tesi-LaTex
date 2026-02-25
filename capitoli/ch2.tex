@@ -1,0 +1,56 @@
+\chapter{Formulazione matematica del problema}
+Dato un modello ViT $M$ con parametri $\theta$, definiamo un processo iterativo di pruning. Per ogni iterazione viene eseguita una ricerca di tipo \textit{Depth First} a profondità limitata, ottimizzata tramite algoritmo \textit{Branch and Bound}. Durante la ricerca verranno selezionate delle azioni da eseguire sul modello, e successivamente, attraverso un secondo problema combinatorio vengono selezionate le specifiche dimensioni da eliminare.
+
+\section{Formulazione della ricerca BnB}
+L'obiettivo è massimizzare la seguente funzione rispetto alla maschera binaria $m$, ai parametri $\theta$ e al dataset di validazione $D$:
+\begin{equation}
+    \max_{m, \theta} \text{Obj}(m, \theta, D) = \log_2(\mathcal{A}(m, \theta, D)) - \lambda \cdot \log_2\left(\frac{\mathcal{P}(m, \theta)}{\mathcal{P}_{tot}(\theta)}\right)
+\end{equation}
+
+Dove:
+\begin{itemize}
+    \item $m \in \{0, 1\}^N$ è la maschera di pruning globale, con $N$ numero totale di parametri.
+    \item La maschera è strutturata per blocchi: $m = \{m^{(1)}, \dots, m^{(i)}, \dots, m^{(L)}\}$, con $L$ numero di layer.
+    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{emb}}, m_{\mathrm{head}}, m_{\mathrm{attn}}, m_{\mathrm{v\_proj}}, m_{\mathrm{mlp}}\}$.
+    \item $\mathcal{A}(m, \theta, D)$ indica l'accuratezza del modello mascherato sul dataset $D$.
+    \item $\mathcal{P}(m, \theta)$ rappresenta il numero di parametri attivi (non zero).
+    \item $\mathcal{P}_{tot}(\theta)$ rappresenta il numero totale di parametri del modello originale.
+\end{itemize}
+
+\subsection{Formulazione delle Azioni di Pruning}
+La selezione dei parametri da rimuovere è modellata come un problema di minimizzazione locale volto a identificare il gruppo di parametri $g$ la cui rimozione minimizza l'impatto sulla funzione di perdita $\mathcal{L}$. Utilizziamo un'approssimazione di Taylor del primo ordine per stimare la variazione della loss, elevata al quadrato per considerare la magnitudine dell'impatto. Definiamo la metrica di importanza $\mathcal{I}(g)$ per un gruppo $g$ come:
+
+\begin{equation}
+    \mathcal{I}(g) = \left( \sum_{w \in g} w \cdot \frac{\partial \mathcal{L}}{\partial w} \right)^2
+\end{equation}
+
+dove il termine $\sum w \cdot \frac{\partial \mathcal{L}}{\partial w}$ rappresenta il prodotto scalare tra i pesi e i loro gradienti.
+
+Per garantire l'efficienza hardware (es. Tensor Core), imponiamo un vincolo di cardinalità $|g| = K$ (con $K=8$ o $K=32$). Le azioni di ricerca sono formalizzate come problemi di minimizzazione sull'insieme $\mathcal{S}_K(\mathcal{D}) = \{ g \subset \mathcal{D} : |g| = K \}$, che rappresenta la famiglia di tutti i possibili sottoinsiemi di parametri nello spazio $\mathcal{D}$ con cardinalità $K$:
+
+\begin{itemize}
+    \item \textbf{Pruning MLP:} Selezione dei $K=32$ neuroni meno rilevanti nello spazio dei neuroni attivi $\mathcal{D}_{\mathrm{MLP}}$ del blocco corrente:
+    \begin{equation}
+        g^*_{\mathrm{MLP}} = \arg\min_{g \in \mathcal{S}_{32}(\mathcal{D}_{\mathrm{MLP}})} \mathcal{I}(g)
+    \end{equation}
+
+    \item \textbf{Pruning QK (Query-Key):} Selezione delle $K=8$ dimensioni meno rilevanti nello spazio delle feature delle teste di attenzione $\mathcal{D}_{\mathrm{QK}}$:
+    \begin{equation}
+        g^*_{\mathrm{QK}} = \arg\min_{g \in \mathcal{S}_{8}(\mathcal{D}_{\mathrm{QK}})} \mathcal{I}(g)
+    \end{equation}
+
+    \item \textbf{Pruning VPROJ (Value-Projection):} Selezione delle $K=8$ dimensioni meno rilevanti nello spazio di proiezione dei valori $\mathcal{D}_{\mathrm{V}}$:
+    \begin{equation}
+        g^*_{\mathrm{vproj}} = \arg\min_{g \in \mathcal{S}_{8}(\mathcal{D}_{\mathrm{V}})} \mathcal{I}(g)
+    \end{equation}
+
+    \item \textbf{Pruning HEAD:} Rimozione di un'intera testa di attenzione $h$, dove il gruppo $g_h$ comprende tutti i pesi associati a quella testa:
+    \begin{equation}
+        h^* = \arg\min_{h \in \text{Heads}} \mathcal{I}(g_h)
+    \end{equation}
+
+    \item \textbf{Pruning EMB (Embedding):} Selezione delle $K=8$ dimensioni meno rilevanti nello spazio dell'embedding globale $\mathcal{D}_{\mathrm{emb}}$, valutando il contributo aggregato su tutti i layer:
+    \begin{equation}
+        g^*_{\mathrm{emb}} = \arg\min_{g \in \mathcal{S}_{8}(\mathcal{D}_{\mathrm{emb}})} \mathcal{I}(g)
+    \end{equation}
+\end{itemize}

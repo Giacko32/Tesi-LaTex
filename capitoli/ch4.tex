@@ -1,0 +1,56 @@
+\chapter{Esperimenti e risultati}
+\label{chap:esperimenti}
+In questo capitolo vengono presentati i risultati ottenuti dal framework realizzato, tramite una serie di esperimenti che coinvolgono modelli e dataset differenti.\newline
+Tutti gli esperimenti vengono svolti con modelli \textbf{ViT}, preaddestrati sul dataset \textbf{ImageNet}, che lavorano con \textit{patch} di dimensione \textbf{16$\times$16} e immagini in \textit{input} di tipo \textbf{RGB} con risoluzione \textbf{224$\times$224}. La procedura utilizzata consta di due fasi:
+\begin{itemize}
+    \item \textbf{FineTuning}: il modello preaddestrato su \textit{ImageNet} viene sottoposto ad una fase di \textit{FineTuning} sul dataset di riferimento per l'esperimento, in questo modo si ottiene allo stesso tempo una \textbf{baseline} per confrontare le performance, ma anche un modello di partenza sul quale eseguire il framework di compressione.
+    \item \textbf{Compressione}: una volta ottenuto il nuovo modello specializzato sul dominio del problema, viene eseguito il framework di \textbf{NAS iterativo} sviluppato, e vengono infine analizzate le performance sul \textit{set} di validazione del dataset di riferimento.
+\end{itemize}
+Di seguito vengono presentati i risultati dei vari esperimenti effettuati.
+
+\section{Test sul dataset CIFAR-100}
+\label{section:test-cifar100}
+Il primo dataset utilizzato per testare il framework è stato il \textbf{CIFAR100}, che è stato selezionato poiché molto diffuso in letteratura, in cui è utilizzato come \textbf{benchmark standard} per compiti di classificazione. Risulta più complesso rispetto al \textit{CIFAR10}, ma mantiene dimensioni ridotte e quindi permette una ottima rapidità di \textit{training}. In particolare \textit{CIFAR100} contiene \textbf{60.000 immagini} totali, suddivise in \textbf{50.000} immagini di addestramento e \textbf{10.000} di validazione, tutte della risoluzione di \textbf{32$\times$32} e di tipo \textbf{RGB}. \newline
+Data la ridotta dimensione del dataset, e la grande capacità dei modelli \textit{Vision Transformer}, per scongiurare il rischio di \textit{overfitting}, sono state adottate delle tecniche di \textbf{Data Augmentation}, in particolare:
+\begin{itemize}
+    \item \textbf{Random Resized Crop}: Questa tecnica estrae una porzione casuale dell'immagine originale con un'area compresa tra l'\textbf{80\%} e il \textbf{100\%} della dimensione iniziale. Successivamente, il ritaglio viene ridimensionato alla risoluzione \textit{target} di \textbf{$224 \times 224$} pixel.
+    \item \textbf{Random Horizontal Flip}: Consiste nel riflettere l'immagine orizzontalmente con una probabilità del \textbf{50\%}.
+    \item \textbf{Color Jitter}: Questa trasformazione applica variazioni casuali alla luminosità, al contrasto e alla saturazione dell'immagine, con un fattore di distorsione impostato a \textbf{0.3} per ciascun parametro.
+\end{itemize}
+Per i test sul dataset \textit{CIFAR100} è stata effettuata una ulteriore suddivisione del \textit{set} di addestramento con rapporto \textbf{90/10}, in modo tale da ottenere un \textbf{Train Set} finale di \textbf{45.000} immagini e un \textbf{Held-Out Set} di \textbf{5.000} immagini, quest'ultimo utilizzato per il monitoraggio del processo di compressione. \newline
+Al fine di rendere il processo di \textit{Neural Architecture Search} (\textbf{NAS}) efficiente e rendere ragionevoli i tempi di esecuzione, ad ogni iterazione viene campionato dal \textit{Train Set} un insieme di \textbf{25 immagini per classe} (\textbf{2500} totali), in modo da ottenere una buona stima del gradiente, senza compromettere la velocità di esplorazione dello spazio architetturale.
+Questo insieme costituisce il \textbf{Search Set} ed è soggetto alle stesse tecniche di \textit{Augmentation} viste in precedenza, in modo da evitare che il framework individui architetture carenti in termini di \textbf{robustezza} e \textbf{generalizzazione}. Il campionamento dinamico del \textit{Search Set} ad ogni iterazione è una scelta progettuale essenziale per garantire la robustezza del processo di ricerca. Questa strategia evita che l'algoritmo converga verso architetture eccessivamente specializzate su un \textit{set} statico di campioni, promuovendo invece l'individuazione di \textit{subnet} capaci di generalizzare correttamente sull'intero dominio di \textit{CIFAR-100}. Il ruolo di questo \textit{Search Set} è duplice:
+\begin{itemize}
+    \item \textbf{Stima della metrica di Importanza}: viene utilizzato per calcolare il valore di importanza di ogni parametro di una \textit{subnet}, corrispondente ad uno specifico nodo della ricerca \textit{Branch and Bound}.
+    \item \textbf{Valutazione della Funzione Obbiettivo}: viene utilizzato per calcolare l'accuratezza della \textit{subnet}, coinvolta nel calcolo della funzione obbiettivo del processo di ricerca.
+\end{itemize}
+
+\subsection{Test con ViT-Small}
+In questi test è stato utilizzato un modello \textbf{ViT-Small} da \textbf{21.7
+    Mln} di parametri, a cui è stata aggiunta una testa di classificazione da
+\textbf{100 unità}, e successivamente sottoposto a \textit{Fine Tuning}
+iniziale sul dataset in oggetto, con i seguenti iperparametri:
+\begin{itemize}
+    \item \textbf{Ottimizzatore AdamW} con un fattore di \textbf{decadimento dei pesi} pari a \textbf{0.05} e con \textbf{learning rate discriminativi}: \textbf{$0.5 \times 10^{-5}$} per il \textit{backbone} del \textit{Transformer} e \textbf{$0.5 \times 10^{-4}$} per la testa di classificazione.
+    \item \textbf{Scheduler} dei \textit{learning rate} di tipo \textbf{Cosine Annealing}.
+    \item Dimensione dei \textbf{batch} di \textit{training} pari a \textbf{128}
+          campioni.
+    \item \textbf{30 epoche} di addestramento con \textbf{early stopping}.
+\end{itemize}
+Per quanto riguarda il framework, tutti i test sono stati effettuati con \textbf{15 iterazioni} di compressione. In ogni iterazione, la \textbf{profondità} dell'albero di ricerca è stata limitata a \textbf{6}, questo implica che, per ogni iterazione, al modello possono essere applicate massimo \textbf{6 azioni consecutive} di \textit{pruning}. Viene inoltre utilizzata una \textbf{soglia di tolleranza} della fase di \textit{Bound} pari a \textbf{0.005}, in modo tale da permettere una ricerca più approfondita dello spazio di ricerca, al costo di un numero lievemente maggiore di nodi esplorati. Infine, la \textbf{funzione obbiettivo} utilizza un valore di \textbf{$\lambda$} pari a \textbf{1.0}, attribuito al contributo dei parametri. \newline
+La fase di \textbf{Recovery Fine-Tuning}, volta a ripristinare le prestazioni dopo il taglio dei parametri, adotta la medesima configurazione di ottimizzazione del \textit{Fine-Tuning} iniziale, con due variazioni: l'impiego di un \textbf{learning rate unico} pari a \textbf{$0.5 \times 10^{-5}$} per l'intera rete e un limite massimo di \textbf{20 epoche} di addestramento, sufficienti per stabilizzare i pesi della \textit{subnet} individuata. \newline
+Infine, per quanto concerne i test con la \textbf{Knowledge Distillation} (\textbf{KD}), è stata implementata una versione \textit{logit-based} seguendo l'approccio proposto da \textit{Hinton et al.} \cite{hinton2015distilling}. In questo caso si è scelto di utilizzare il \textit{ViT-Small baseline} come modello \textbf{teacher}. La funzione di \textbf{loss composita} utilizzata durante il \textit{Recovery Fine-Tuning} integra un termine di distillazione con temperatura \textbf{$\tau = 4.0$}. A tale componente è stato assegnato un \textbf{peso relativo pari a $0.9$}, privilegiando così il trasferimento della conoscenza dal modello \textit{teacher} alla \textit{subnet} compressa. Questa configurazione ha permesso di ammorbidire le distribuzioni di probabilità dei \textit{logits}, consentendo al modello \textit{student} di apprendere non solo le etichette corrette, ma anche le relazioni strutturali tra le classi catturate dal modello completo. Di seguito i risultati dei test. \newline
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{Risultati della compressione di ViT-Small su CIFAR-100.}
+\label{tab:risultati-cifar100}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Modello} & \textbf{Parametri (M)} & \textbf{Top-1 Acc. (\%)} & \textbf{GFLOPs} & \textbf{Throughput (img/s)} & \textbf{Latency (ms)} \\ \midrule
+Baseline         & 21.67                  & 90.42\%                  & 9.20            & 1137.5                      & 112.5                       \\
+\addlinespace
+\textbf{Pruned}  & \textbf{15.93 \textcolor{darkgray}{(-26.6\%)}}       & \textbf{89.59\% \textcolor{darkgray}{(-0.83\%)}}         & \textbf{6.85 \textcolor{darkgray}{(-25.51\%)}}   & \textbf{1405.5 \textcolor{darkgray}{(+23.56\%)}}             & \textbf{91.1 \textcolor{darkgray}{(-19.07\%)}}               \\ \bottomrule
+\end{tabular}
+\end{table}
+

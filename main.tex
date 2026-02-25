@@ -1,0 +1,123 @@
+\documentclass[a4paper,12pt,twoside]{report}
+
+\usepackage[T1]{fontenc}                        % Fontenc per caratteri accentati
+\usepackage[utf8]{inputenc}                     % UTF-8 encoding
+\usepackage[italian]{babel}                     % Package italiano
+
+\usepackage{mathptmx}                           % Font times
+
+\usepackage{indentfirst}                        % Per indentare il primo paragrafo
+
+\usepackage{lipsum}                             % Lorem ipsum
+
+\usepackage{graphicx}                           % Immagini
+\usepackage{subfig}                             % Sotto-immagini
+\usepackage{float}                              % Per posizionare meglio le immagini
+\usepackage{caption}                            % Didascalie
+\usepackage[italian]{varioref}                  % Riferimenti completi per le immagini
+    
+\usepackage{booktabs}                           % Tabelle
+\usepackage{array}                              % Larghezza colonne personalizzabile
+
+\usepackage{sectsty}                            % Sezioni personalizzate
+\usepackage{fancyhdr}                           % Header e footer personalizzati
+
+\usepackage{listings}                           % Package per i codici
+\usepackage{color}                              % Colori  per i codici
+\usepackage[dvipsnames]{xcolor}
+
+\usepackage{amsmath,amssymb,amsthm}             % Simboli matematici
+\usepackage{latexsym,eurosym}                   % Altri   simboli
+
+
+\usepackage[autostyle,                          % Necessario per biblatex
+            italian=guillemets]{csquotes}
+\usepackage[style=numeric,hyperref,             % Package bibliografia
+            firstinits=true,                    % Mostra solo iniziali dei nomi
+            maxbibnames=99,                     % Mostra tutti gli autori
+            doi=false,isbn=false,               % Non mostrare i campi DOI e ISBN
+            defernumbers=true]{biblatex}
+            
+
+\usepackage{microtype}                          % Finezze tipografiche
+            
+
+%% Impostazioni margini e interlinea
+\usepackage{geometry}                           % Package per i margini
+\usepackage{setspace}                           % Package per l'interlinea
+
+
+\usepackage{hyperref}                           % Deve essere caricato per ultimo
+
+\input{impostazioni-tesi}                       % File con le impostazioni della tesi
+\input{abstract-env}                            % Definizione dell'ambiente myabstract
+
+
+\begin{document}
+
+\hypersetup{pageanchor=false}                   % Disattiviamo hyperref
+
+%% Pagina del titolo
+\input{frontespizio}
+
+
+%% Sommario
+%\begin{myabstract2}
+%\input{capitoli/sommario}
+%\end{myabstract2}
+
+\hypersetup{pageanchor=true}                    % Riattiviamo hyperref
+
+
+%% Indice
+\restoregeometry
+\pagestyle{fancy}
+\tableofcontents
+
+
+%% Introduzione
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Introduzione}
+\include{capitoli/introduzione}
+
+
+%% Capitoli
+\include{capitoli/ch1}
+\include{capitoli/ch2}
+\include{capitoli/ch3}
+\include{capitoli/ch4}
+\include{capitoli/ch5}
+% ...
+
+
+
+%% Conclusioni
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Conclusioni}
+\include{capitoli/conclusioni}
+
+
+%% Ringraziamenti
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Ringraziamenti}
+\include{capitoli/ringraziamenti}
+
+
+%% Indice delle figure
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Elenco delle figure}
+\listoffigures
+
+
+%% Bibliografia
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{\bibname}
+\markboth{Bibliografia}{}
+\printbibliography[heading=bibliografia]
+
+\end{document}

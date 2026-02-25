@@ -1,0 +1,23 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {chapter}{Introduzione}{4}{section*.2}%
+\contentsline {chapter}{\numberline {1}Stato dell'arte}{5}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Formulazione matematica del problema}{6}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Formulazione della ricerca BnB}{6}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}Formulazione delle Azioni di Pruning}{7}{subsection.2.1.1}%
+\contentsline {chapter}{\numberline {3}Metodo adottato}{9}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Logica comune ai sistemi di analisi}{9}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Selezione delle features}{9}{subsection.3.1.1}%
+\contentsline {section}{\numberline {3.2}Tecniche di manipolazione dei sorgenti}{10}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Manipolazioni singole}{10}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Manipolazioni Multiple}{10}{subsection.3.2.2}%
+\contentsline {chapter}{\numberline {4}Esperimenti e risultati}{11}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Test sul dataset CIFAR-100}{11}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Test con ViT-Small}{13}{subsection.4.1.1}%
+\contentsline {chapter}{\numberline {5}Caso di studio: deploy su mobile}{15}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Raze the ground a confronto con MCTS e BS}{15}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Raze the ground a confronto con NUOVO/I METODO/I DA TROVATE}{16}{section.5.2}%
+\contentsline {chapter}{Conclusioni}{17}{section*.5}%
+\contentsline {chapter}{Ringraziamenti}{19}{section*.7}%
+\contentsline {chapter}{Elenco delle figure}{21}{section*.9}%
+\contentsline {chapter}{Bibliografia}{22}{section*.11}%
