@@ -1,21 +1,43 @@
 \chapter{Formulazione matematica del problema}
-Dato un modello ViT $M$ con parametri $\theta$, definiamo un processo iterativo di pruning. Per ogni iterazione viene eseguita una ricerca di tipo \textit{Depth First} a profondità limitata, ottimizzata tramite algoritmo \textit{Branch and Bound}. Durante la ricerca verranno selezionate delle azioni da eseguire sul modello, e successivamente, attraverso un secondo problema combinatorio vengono selezionate le specifiche dimensioni da eliminare.
+Un problema di Neural Architecture Search (NAS) consiste in una ricerca in uno spazio degli stati, a partire da una architettura di partenza, detta \textbf{Supernet}, per identificare, tra tutte le possibili \textbf{Subnet}, quella che massimizza una determinata funzione obiettivo. In questo caso, al fine di ottenere una compressione di modelli \textit{Transformer}, la ricerca si configura come un problema di \textbf{ottimizzazione multi-obiettivo}, tramite il quale vengono ottimizzate sia la performance del modello (attraverso l'accuratezza) sia la dimensione (attraverso il numero di parametri). \newline
+Uno dei problemi principali nell'ambito NAS è proprio la dimensione dello spazio degli stati, che risulta elevatissima, poiché il numero di possibili configurazioni cresce in maniera combinatoria rispetto al numero di componenti del modello. Nei Vision Transformer, ogni blocco Transformer presenta molteplici gradi di libertà: è possibile variare il numero di teste di attenzione nell'unità di \textit{Multi-Head Attention} (MHSA), la dimensione dei vettori \textit{Query-Key} e \textit{Value}, ma anche la dimensione del livello nascosto nel modulo \textit{Multi-Layer Perceptron} (MLP), ecc\ldots Anche considerando un numero limitato di opzioni per ogni strato, il numero totale di subnet candidate diventa rapidamente intrattabile per una ricerca esaustiva. \newline
+Proprio per rendere trattabile l'esplorazione dello spazio degli stati è stata scelta una formulazione conveniente del problema, attraverso un algoritmo di ricerca \textit{Branch and Bound} e l'utilizzo di azioni di \textit{pruning} predefinite. Di seguito la formulazione matematica nel dettaglio.\newline
 
-\section{Formulazione della ricerca BnB}
+
+\section{Formulazione della ricerca}
+Dato un modello ViT $M$ con parametri $\theta$, definiamo un processo iterativo di pruning. Per ogni iterazione viene eseguita una ricerca di tipo \textit{Depth First} a profondità limitata, ottimizzata tramite algoritmo \textit{Branch and Bound}. Durante la ricerca verranno selezionate delle azioni da eseguire sul modello, e successivamente, attraverso un secondo problema combinatorio vengono selezionate le specifiche dimensioni da eliminare.
 L'obiettivo è massimizzare la seguente funzione rispetto alla maschera binaria $m$, ai parametri $\theta$ e al dataset di validazione $D$:
 \begin{equation}
-    \max_{m, \theta} \text{Obj}(m, \theta, D) = \log_2(\mathcal{A}(m, \theta, D)) - \lambda \cdot \log_2\left(\frac{\mathcal{P}(m, \theta)}{\mathcal{P}_{tot}(\theta)}\right)
+    \max_{m} \text{Obj}(m, \theta, D) = \log_2(\mathcal{A}(m, \theta, D)) - \lambda \cdot \log_2\left(\frac{\mathcal{P}(m, \theta)}{\mathcal{P}_{tot}(\theta)}\right)
 \end{equation}
 
 Dove:
 \begin{itemize}
     \item $m \in \{0, 1\}^N$ è la maschera di pruning globale, con $N$ numero totale di parametri.
-    \item La maschera è strutturata per blocchi: $m = \{m^{(1)}, \dots, m^{(i)}, \dots, m^{(L)}\}$, con $L$ numero di layer.
-    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{emb}}, m_{\mathrm{head}}, m_{\mathrm{attn}}, m_{\mathrm{v\_proj}}, m_{\mathrm{mlp}}\}$.
+    \item La maschera è strutturata per blocchi: $m = \{m_{\mathrm{emb}}, m^{(1)}, \dots, m^{(i)}, \dots, m^{(L)}\}$, con $L$ numero di layer.
+    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{head}}, m_{\mathrm{attn}}, m_{\mathrm{v\_proj}}, m_{\mathrm{mlp}}\}$.
     \item $\mathcal{A}(m, \theta, D)$ indica l'accuratezza del modello mascherato sul dataset $D$.
     \item $\mathcal{P}(m, \theta)$ rappresenta il numero di parametri attivi (non zero).
     \item $\mathcal{P}_{tot}(\theta)$ rappresenta il numero totale di parametri del modello originale.
 \end{itemize}
+Notare che tramite questa formulazione è possibile ricondurre il problema in esame ad un \textbf{Problema di Programmazione Non Lineare Binario} (PNLPB). In questo contesto, le variabili decisionali sono rappresentate dai componenti della maschera $m \in \{0, 1\}^N$, mentre la non linearità è introdotta sia dalla natura della funzione di accuratezza $\mathcal{A}$ (legata ai pesi della rete neurale) sia dall'operatore logaritmico utilizzato nella funzione obiettivo. Nonostante esistano in letteratura delle tecniche di \textit{Smoothing} delle variabili binarie per risolvere questo tipo di problemi combinatori, come quelle utilizzate da Murray et al. \cite{nonlinear_optim}, i tempi di risoluzione, con un numero ridotto di variabili binarie rispetto al caso in esame, sono molto elevati. Proprio per tale motivo si è scelto di utilizzare un differente approccio algoritmico basato sul \textit{Branch and Bound}. \newline
+
+\subsection{Branching}
+L'esplorazione dello spazio di ricerca avviene tramite la costruzione di un apposito albero, seguendo un algoritmo di esplorazione \textit{Depth First} a profondità limitata; di conseguenza, è possibile definire la strategia di esplorazione come \textbf{Depth Limited Depth First Branch and Bound} (DL-DFBnB). \newline
+La radice di questo albero è rappresentata dalla \textit{Supernet}, ovvero il modello \textit{Vision Transformer} di dimensione originale, specializzato su uno specifico dominio tramite \textit{fine-tuning}. A partire dalla radice, viene eseguita la fase di \textbf{Branching} applicando le azioni di seguito elencate:
+\begin{itemize}
+    \item \textbf{Pruning Multi-Layer Perceptron}
+    \item \textbf{Pruning Query-Key}
+    \item \textbf{Pruning Value-Projection}
+    \item \textbf{Pruning Head}
+    \item \textbf{Pruning Embedding}
+\end{itemize}
+Si noti che tutte le azioni, ad eccezione del \textit{Pruning} dell'\textit{Embedding}, sono locali a uno specifico blocco \textit{Transformer}. La formalizzazione matematica delle singole azioni è rimandata alla sezione successiva. \newline
+Attraverso il \textit{branching} viene costruito un \textbf{albero 5-ario} di ricerca, dove ogni nodo rappresenta una specifica \textit{Subnet} ottenuta a partire dal nodo genitore. Ad ogni nodo viene associato un valore della funzione obiettivo, calcolato valutando l'accuratezza sul \textit{Search Set} (utilizzando esclusivamente i parametri attivi) e il relativo numero di parametri residui. Questo valore verrà successivamente utilizzato per verificare i vincoli di \textit{Bound} e, qualora risultasse più elevato del miglior valore individuato dalla ricerca, si aggiornerebbe quest'ultimo e si salverebbe la maschera di \textit{Pruning} corrispondente. \newline
+Al fine di massimizzare l'efficacia della potatura, la strategia di esplorazione \textit{Depth First} è stata scelta per favorire il raggiungimento dei nodi foglia dell'albero di ricerca. Questo permette all'algoritmo di individuare rapidamente configurazioni caratterizzate da un elevato numero di azioni di \textit{pruning} e, di conseguenza, da una significativa riduzione dei parametri.\newline
+L'introduzione di un limite di profondità nell'albero di ricerca permette di mitigare l'impatto cumulativo del \textit{pruning} sulle prestazioni del modello. Un'esplorazione eccessivamente profonda, infatti, comporterebbe una rimozione massiva di parametri, rischiando di degradare l'accuratezza in modo irreversibile. In tali scenari, il danno strutturale all'architettura potrebbe risultare troppo elevato, rendendo difficoltoso il recupero delle performance originali anche attraverso l'impiego di tecniche avanzate come la \textit{Knowledge Distillation}.\newline
+
+\subsection{Bound}
 
 \subsection{Formulazione delle Azioni di Pruning}
 La selezione dei parametri da rimuovere è modellata come un problema di minimizzazione locale volto a identificare il gruppo di parametri $g$ la cui rimozione minimizza l'impatto sulla funzione di perdita $\mathcal{L}$. Utilizziamo un'approssimazione di Taylor del primo ordine per stimare la variazione della loss, elevata al quadrato per considerare la magnitudine dell'impatto. Definiamo la metrica di importanza $\mathcal{I}(g)$ per un gruppo $g$ come:
