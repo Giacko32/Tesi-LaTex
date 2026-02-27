@@ -1,12 +1,37 @@
 \chapter{Formulazione matematica del problema}
-Un problema di Neural Architecture Search (NAS) consiste in una ricerca in uno spazio degli stati, a partire da una architettura di partenza, detta \textbf{Supernet}, per identificare, tra tutte le possibili \textbf{Subnet}, quella che massimizza una determinata funzione obiettivo. In questo caso, al fine di ottenere una compressione di modelli \textit{Transformer}, la ricerca si configura come un problema di \textbf{ottimizzazione multi-obiettivo}, tramite il quale vengono ottimizzate sia la performance del modello (attraverso l'accuratezza) sia la dimensione (attraverso il numero di parametri). \newline
-Uno dei problemi principali nell'ambito NAS è proprio la dimensione dello spazio degli stati, che risulta elevatissima, poiché il numero di possibili configurazioni cresce in maniera combinatoria rispetto al numero di componenti del modello. Nei Vision Transformer, ogni blocco Transformer presenta molteplici gradi di libertà: è possibile variare il numero di teste di attenzione nell'unità di \textit{Multi-Head Attention} (MHSA), la dimensione dei vettori \textit{Query-Key} e \textit{Value}, ma anche la dimensione del livello nascosto nel modulo \textit{Multi-Layer Perceptron} (MLP), ecc\ldots Anche considerando un numero limitato di opzioni per ogni strato, il numero totale di subnet candidate diventa rapidamente intrattabile per una ricerca esaustiva. \newline
-Proprio per rendere trattabile l'esplorazione dello spazio degli stati è stata scelta una formulazione conveniente del problema, attraverso un algoritmo di ricerca \textit{Branch and Bound} e l'utilizzo di azioni di \textit{pruning} predefinite. Di seguito la formulazione matematica nel dettaglio.\newline
-
+Un problema di Neural Architecture Search (NAS) consiste in una ricerca in uno
+spazio degli stati, a partire da una architettura di partenza, detta
+\textbf{Supernet}, per identificare, tra tutte le possibili \textbf{Subnet},
+quella che massimizza una determinata funzione obiettivo. In questo caso, al
+fine di ottenere una compressione di modelli \textit{Transformer}, la ricerca
+si configura come un problema di \textbf{ottimizzazione multi-obiettivo},
+tramite il quale vengono ottimizzate sia la performance del modello (attraverso
+l'accuratezza) sia la dimensione (attraverso il numero di parametri). \newline
+Uno dei problemi principali nell'ambito NAS è proprio la dimensione dello
+spazio degli stati, che risulta elevatissima, poiché il numero di possibili
+configurazioni cresce in maniera combinatoria rispetto al numero di componenti
+del modello. Nei Vision Transformer, ogni blocco Transformer presenta
+molteplici gradi di libertà: è possibile variare il numero di teste di
+attenzione nell'unità di \textit{Multi-Head Attention} (MHSA), la dimensione
+dei vettori \textit{Query-Key} e \textit{Value}, ma anche la dimensione del
+livello nascosto nel modulo \textit{Multi-Layer Perceptron} (MLP), ecc\ldots
+Anche considerando un numero limitato di opzioni per ogni strato, il numero
+totale di subnet candidate diventa rapidamente intrattabile per una ricerca
+esaustiva. \newline Proprio per rendere trattabile l'esplorazione dello spazio
+degli stati è stata scelta una formulazione conveniente del problema,
+attraverso un algoritmo di ricerca \textit{Branch and Bound} e l'utilizzo di
+azioni di \textit{pruning} predefinite. Di seguito la formulazione matematica
+nel dettaglio.\newline
 
 \section{Formulazione della ricerca}
-Dato un modello ViT $M$ con parametri $\theta$, definiamo un processo iterativo di pruning. Per ogni iterazione viene eseguita una ricerca di tipo \textit{Depth First} a profondità limitata, ottimizzata tramite algoritmo \textit{Branch and Bound}. Durante la ricerca verranno selezionate delle azioni da eseguire sul modello, e successivamente, attraverso un secondo problema combinatorio vengono selezionate le specifiche dimensioni da eliminare.
-L'obiettivo è massimizzare la seguente funzione rispetto alla maschera binaria $m$, ai parametri $\theta$ e al dataset di validazione $D$:
+Dato un modello ViT $M$ con parametri $\theta$, definiamo un processo iterativo
+di pruning. Per ogni iterazione viene eseguita una ricerca di tipo
+\textit{Depth First} a profondità limitata, ottimizzata tramite algoritmo
+\textit{Branch and Bound}. Durante la ricerca verranno selezionate delle azioni
+da eseguire sul modello, e successivamente, attraverso un secondo problema
+combinatorio vengono selezionate le specifiche dimensioni da eliminare.
+L'obiettivo è massimizzare la seguente funzione rispetto alla maschera binaria
+$m$, ai parametri $\theta$ e al dataset di validazione $D$:
 \begin{equation}
     \max_{m} \text{Obj}(m, \theta, D) = \log_2(\mathcal{A}(m, \theta, D)) - \lambda \cdot \log_2\left(\frac{\mathcal{P}(m, \theta)}{\mathcal{P}_{tot}(\theta)}\right)
 \end{equation}
@@ -14,8 +39,10 @@ L'obiettivo è massimizzare la seguente funzione rispetto alla maschera binaria 
 Dove:
 \begin{itemize}
     \item $m \in \{0, 1\}^N$ è la maschera di pruning globale, con $N$ numero totale di parametri.
-    \item La maschera è strutturata per blocchi: $m = \{m_{\mathrm{emb}}, m^{(1)}, \dots, m^{(i)}, \dots, m^{(L)}\}$, con $L$ numero di layer.
-    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{head}}, m_{\mathrm{attn}}, m_{\mathrm{v\_proj}}, m_{\mathrm{mlp}}\}$.
+    \item La maschera è strutturata per blocchi: $m = \{m_{\mathrm{emb}}, m^{(1)}, \dots,
+              m^{(i)}, \dots, m^{(L)}\}$, con $L$ numero di layer.
+    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{head}}, m_{\mathrm{attn}},
+              m_{\mathrm{v\_proj}}, m_{\mathrm{mlp}}\}$.
     \item $\mathcal{A}(m, \theta, D)$ indica l'accuratezza del modello mascherato sul dataset $D$.
     \item $\mathcal{P}(m, \theta)$ rappresenta il numero di parametri attivi (non zero).
     \item $\mathcal{P}_{tot}(\theta)$ rappresenta il numero totale di parametri del modello originale.
@@ -23,8 +50,15 @@ Dove:
 Notare che tramite questa formulazione è possibile ricondurre il problema in esame ad un \textbf{Problema di Programmazione Non Lineare Binario} (PNLPB). In questo contesto, le variabili decisionali sono rappresentate dai componenti della maschera $m \in \{0, 1\}^N$, mentre la non linearità è introdotta sia dalla natura della funzione di accuratezza $\mathcal{A}$ (legata ai pesi della rete neurale) sia dall'operatore logaritmico utilizzato nella funzione obiettivo. Nonostante esistano in letteratura delle tecniche di \textit{Smoothing} delle variabili binarie per risolvere questo tipo di problemi combinatori, come quelle utilizzate da Murray et al. \cite{nonlinear_optim}, i tempi di risoluzione, con un numero ridotto di variabili binarie rispetto al caso in esame, sono molto elevati. Proprio per tale motivo si è scelto di utilizzare un differente approccio algoritmico basato sul \textit{Branch and Bound}. \newline
 
 \subsection{Branching}
-L'esplorazione dello spazio di ricerca avviene tramite la costruzione di un apposito albero, seguendo un algoritmo di esplorazione \textit{Depth First} a profondità limitata; di conseguenza, è possibile definire la strategia di esplorazione come \textbf{Depth Limited Depth First Branch and Bound} (DL-DFBnB). \newline
-La radice di questo albero è rappresentata dalla \textit{Supernet}, ovvero il modello \textit{Vision Transformer} di dimensione originale, specializzato su uno specifico dominio tramite \textit{fine-tuning}. A partire dalla radice, viene eseguita la fase di \textbf{Branching} applicando le azioni di seguito elencate:
+L'esplorazione dello spazio di ricerca avviene tramite la costruzione di un
+apposito albero, seguendo un algoritmo di esplorazione \textit{Depth First} a
+profondità limitata; di conseguenza, è possibile definire la strategia di
+esplorazione come \textbf{Depth Limited Depth First Branch and Bound}
+(DL-DFBnB). \newline La radice di questo albero è rappresentata dalla
+\textit{Supernet}, ovvero il modello \textit{Vision Transformer} di dimensione
+originale, specializzato su uno specifico dominio tramite \textit{fine-tuning}.
+A partire dalla radice, viene eseguita la fase di \textbf{Branching} applicando
+le azioni di seguito elencate:
 \begin{itemize}
     \item \textbf{Pruning Multi-Layer Perceptron}
     \item \textbf{Pruning Query-Key}
@@ -38,103 +72,209 @@ Al fine di massimizzare l'efficacia della potatura, la strategia di esplorazione
 L'introduzione di un limite di profondità nell'albero di ricerca permette di mitigare l'impatto cumulativo del \textit{pruning} sulle prestazioni del modello. Un'esplorazione eccessivamente profonda, infatti, comporterebbe una rimozione massiva di parametri, rischiando di degradare l'accuratezza in modo irreversibile. In tali scenari, il danno strutturale all'architettura potrebbe risultare troppo elevato, rendendo difficoltoso il recupero delle performance originali anche attraverso l'impiego di tecniche avanzate come la \textit{Knowledge Distillation}.
 
 \subsection{Bound}
-La dimensione dell'albero di ricerca risulta significativa; in particolare, detta $\mathcal{D}$ la massima profondità dell'albero, e considerato che si tratta di un albero 5-ario, il numero totale di nodi è pari a: 
+La dimensione dell'albero di ricerca risulta significativa; in particolare,
+detta $\mathcal{D}$ la massima profondità dell'albero, e considerato che si
+tratta di un albero 5-ario, il numero totale di nodi è pari a:
 
 \begin{equation}
-    \mathcal{N} = \sum_{i=0}^{\mathcal{D}} 5^i 
+    \mathcal{N} = \sum_{i=0}^{\mathcal{D}} 5^i
 \end{equation}
 
-Ad esempio, se $\mathcal{D} = 6$, il numero totale di nodi è pari a $19.531$. Considerando che per ogni nodo è necessario calcolare i gradienti per tutti i parametri attivi del modello al fine di stimare l'importanza, il tempo necessario per una ricerca esaustiva risulterebbe proibitivo. Tale criticità viene risolta attraverso la fase di \textbf{Bound}, che permette di effettuare un \textit{pruning on-the-fly} sull'albero di ricerca, escludendo interi rami computazionalmente onerosi ma poco promettenti dal punto di vista della funzione obiettivo. \newline
-In particolare, per ogni nodo $n$ esplorato, viene verificato il seguente vincolo di ammissibilità: 
+Ad esempio, se $\mathcal{D} = 6$, il numero totale di nodi è pari a $19.531$.
+Considerando che per ogni nodo è necessario calcolare i gradienti per tutti i
+parametri attivi del modello al fine di stimare l'importanza, il tempo
+necessario per una ricerca esaustiva risulterebbe proibitivo. Tale criticità
+viene risolta attraverso la fase di \textbf{Bound}, che permette di effettuare
+un \textit{pruning on-the-fly} sull'albero di ricerca, escludendo interi rami
+computazionalmente onerosi ma poco promettenti dal punto di vista della
+funzione obiettivo. \newline In particolare, per ogni nodo $n$ esplorato, viene
+verificato il seguente vincolo di ammissibilità:
 \begin{equation}
     \text{Obj}(n) > \text{Obj}_{best} - \epsilon
 \end{equation}
 Qualora il vincolo venisse violato, il nodo non verrebbe sottoposto a \textit{Branching}, troncando di fatto l'esplorazione di quel ramo. È importante sottolineare la presenza del \textbf{fattore di tolleranza} $\epsilon$: esso consente alla ricerca di non arrestarsi prematuramente, permettendo l'esplorazione di subnet che, pur essendo leggermente inferiori al miglior valore individuato ($\text{Obj}_{best}$), si trovano in regioni dello spazio degli stati potenzialmente ottimali. Questo approccio garantisce una ricerca più robusta e completa, anche se maggiormente onerosa in termini computazionali.
 
 \section{Formulazione delle Azioni di ricerca}
-Per ogni nodo dell'albero di ricerca, l'applicazione delle azioni di \textit{pruning} genera i cinque nodi figli corrispondenti. Ciascuna azione identifica un gruppo specifico di parametri $\mathcal{W}_g$ all'interno dell'architettura che può essere rimosso minimizzando il degrado delle prestazioni del modello. \newline
-Al fine di individuare le componenti meno rilevanti per le capacità predittive del modello, viene adottata una metrica di importanza basata sulla sensibilità della funzione di perdita rispetto ai parametri. Per un singolo parametro $w$, l'importanza è definita come:
+Per ogni nodo dell'albero di ricerca, l'applicazione delle azioni di
+\textit{pruning} genera i cinque nodi figli corrispondenti. Ciascuna azione
+identifica un gruppo specifico di parametri $\mathcal{W}_g$ all'interno
+dell'architettura che può essere rimosso minimizzando il degrado delle
+prestazioni del modello. \newline Al fine di individuare le componenti meno
+rilevanti per le capacità predittive del modello, viene adottata una metrica di
+importanza basata sulla sensibilità della funzione di perdita rispetto ai
+parametri. Per un singolo parametro $w$, l'importanza è definita come:
 \begin{equation}
-\mathcal{I}(w) = w^2 \cdot \mathbb{E}_{x \sim \mathcal{D}} \left[ \left( \frac{\partial \mathcal{L}(x; \theta^*)}{\partial w} \right)^2 \right]
+    \mathcal{I}(w) = w^2 \cdot \mathbb{E}_{x \sim \mathcal{D}} \left[ \left( \frac{\partial \mathcal{L}(x; \theta^*)}{\partial w} \right)^2 \right]
 \end{equation}
 Dove $\mathcal{L}(x; \theta^*)$ è proprio la funzione di perdita, calcolata a partire dai parametri attivi $\theta^*$, sul \textit{Search Set} ($x$).
 Operando un \textit{pruning strutturato}, l'importanza di un intero gruppo di parametri $\mathcal{W}_g$ (come un intero neurone) viene calcolata come la somma dei contributi individuali:
 \begin{equation}
-\mathcal{I}(\mathcal{W}_g) = \sum_{w \in \mathcal{W}_g} \mathcal{I}(w)
+    \mathcal{I}(\mathcal{W}_g) = \sum_{w \in \mathcal{W}_g} \mathcal{I}(w)
 \end{equation}
 
-Le specifiche azioni di \textit{pruning} possono essere definite come un problema di minimizzazione locale volto a identificare il gruppo di dimensioni (formate da più parametri) $g$ la cui rimozione minimizza l'impatto sulla funzione di perdita $\mathcal{L}$. Per garantire la compatibilità tra il modello compresso e l'hardware pensato per l'accelerazione di questi modelli (es. Tensor Core), imponiamo un vincolo di cardinalità $|g| = K$ (con $K$ multiplo di 8). Di seguito la formulazione matematica dettagliata per ogni singola azione:
+Le specifiche azioni di \textit{pruning} possono essere definite come un
+problema di minimizzazione locale volto a identificare il gruppo di dimensioni
+(formate da più parametri) $g$ la cui rimozione minimizza l'impatto sulla
+funzione di perdita $\mathcal{L}$. Per garantire la compatibilità tra il
+modello compresso e l'hardware pensato per l'accelerazione di questi modelli
+(es. Tensor Core), imponiamo un vincolo di cardinalità $|g| = K$ (con $K$
+multiplo di 8). Di seguito la formulazione matematica dettagliata per ogni
+singola azione:
 
 \begin{itemize}
     \item \textbf{Pruning MLP:} Sia $\mathcal{B}$ l'insieme dei blocchi \textit{Transformer} e $MLP_{b_i}= \{ g \subset \mathcal{W}_{MLP, b_i} : |g| = K \}$ l'insieme dei possibili raggruppamenti di cardinalità $K$ di dimensioni del modulo MLP nel blocco $i$-esimo. L'azione identifica il gruppo $g^*_{\mathrm{MLP}}$ che minimizza:
-    \begin{equation}
-        g^*_{\mathrm{MLP}} = \arg\min_{\substack{b_i \in \mathcal{B} \\ g_{K} \in MLP_{b_i}}} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
-    \end{equation}\newline
-    
+          \begin{equation}
+              g^*_{\mathrm{MLP}} = \arg\min_{\substack{b_i \in \mathcal{B} \\ g_{K} \in MLP_{b_i}}} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
+          \end{equation}\newline
+
     \item \textbf{Pruning QK (Query-Key):} Sia $\mathcal{B}$ l'insieme dei blocchi \textit{Transformer} e $QK_{b_i}= \{ g \subset \mathcal{W}_{QK, b_i} : |g| = K \}$ l'insieme dei raggruppamenti di $K$ dimensioni condivise tra i moduli Query e Key di tutte le teste di attenzione del blocco $i$-esimo. L'azione identifica il gruppo $g^*_{\mathrm{QK}}$ che minimizza:
-    \begin{equation}
-        g^*_{\mathrm{QK}} = \arg\min_{\substack{b_i \in \mathcal{B} \\ g_{K} \in QK_{b_i}}} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
-    \end{equation}\newline
+          \begin{equation}
+              g^*_{\mathrm{QK}} = \arg\min_{\substack{b_i \in \mathcal{B} \\ g_{K} \in QK_{b_i}}} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
+          \end{equation}\newline
 
     \item \textbf{Pruning VPROJ (Value-Projection):} Sia $\mathcal{B}$ l'insieme dei blocchi \textit{Transformer} e $VP_{b_i}= \{ g \subset \mathcal{W}_{VP, b_i} : |g| = K \}$ l'insieme dei raggruppamenti di cardinalità $K$ di dimensioni dei moduli \textit{Value} e \textit{Output Projection} di tutte le teste di attenzione nel blocco $i$-esimo. L'azione identifica il gruppo $g^*_{\mathrm{VP}}$ che minimizza:
-    \begin{equation}
-    g^*_{\mathrm{VP}} = \arg\min_{\substack{b_i \in \mathcal{B} \\ g_{K} \in VP_{b_i}}} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
-    \end{equation}\newline
+          \begin{equation}
+              g^*_{\mathrm{VP}} = \arg\min_{\substack{b_i \in \mathcal{B} \\ g_{K} \in VP_{b_i}}} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
+          \end{equation}\newline
 
     \item \textbf{Pruning HEAD:} Sia $\mathcal{B}$ l'insieme dei blocchi \textit{Transformer} e $H_{b_i}= \{ h \in HEADS_{b_i}\}$ l'insieme di tutte le teste di attenzione nel blocco $i$-esimo. L'azione identifica la head $h^*$ che minimizza:
-    \begin{equation}
-    h^* = \arg\min_{\substack{b_i \in \mathcal{B} \\ h \in H_{b_i}}} \sum_{W_g \in h} \mathcal{I}(W_g)
-    \end{equation}\newline
+          \begin{equation}
+              h^* = \arg\min_{\substack{b_i \in \mathcal{B} \\ h \in H_{b_i}}} \sum_{W_g \in h} \mathcal{I}(W_g)
+          \end{equation}\newline
 
     \item \textbf{Pruning EMB (Embedding):} Sia $EMB= \{ g \subset \mathcal{W}_{EMB} : |g| = K \}$ l'insieme di tutti i raggruppamenti di cardinalità $K$ di dimensioni dell'\textit{Embedding} nell'intero modello \textit{Transformer}. L'azione identifica il gruppo $g^*_{\mathrm{EMB}}$ che minimizza:
-    \begin{equation}
-    g^*_{\mathrm{EMB}} = \arg\min_{g_{K} \in EMB} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
-    \end{equation}
-    Si noti che, a differenza delle azioni precedenti, il \textit{Pruning} dell'\textit{Embedding} opera sulla dimensione globale del modello. La rimozione di un raggruppamento $g_{K}$ in questa fase comporta una potatura della rappresentazione vettoriale che si propaga attraverso l'intera architettura, influenzando la dimensione di tutti i blocchi \textit{Transformer}.
+          \begin{equation}
+              g^*_{\mathrm{EMB}} = \arg\min_{g_{K} \in EMB} \sum_{W_g \in g_{K}} \mathcal{I}(W_g)
+          \end{equation}
+          Si noti che, a differenza delle azioni precedenti, il \textit{Pruning} dell'\textit{Embedding} opera sulla dimensione globale del modello. La rimozione di un raggruppamento $g_{K}$ in questa fase comporta una potatura della rappresentazione vettoriale che si propaga attraverso l'intera architettura, influenzando la dimensione di tutti i blocchi \textit{Transformer}.
 \end{itemize}
 
 \section{Derivazione del criterio di importanza}
-\textbf{Voluto:} come cambia la loss al variare di $w$.
-$$ \Delta L = L(w + \delta w) - L(w) $$
-$$ L(w + \delta w) = L(w) + \Delta L $$
+La metrica di importanza utilizzata combina le informazioni sulla magnitudo dei
+pesi e dei gradienti, al fine di misurare la sensibilità di uno specifico
+parametro, a partire dai dati in input al modello. I parametri meno sensibili
+vengono interpretati come di scarso contributo all'output del modello, e di
+conseguenza vengono potati. La derivazione della metrica di importanza
+considera un singolo parametro $w$ e il suo effetto sulla funzione di perdita
+$L$. In particolare si analizza la variazione di $L$ al variare di $w$:
+\begin{equation}
+    \Delta L = L(w + \delta w) - L(w)
+\end{equation}
+\begin{equation}
+    L(w + \delta w) = L(w) + \Delta L
+\end{equation}
 
-Espansione di Taylor al primo ordine:
-$$ L(w + \delta w) \approx L(w) + \frac{\partial L}{\partial w} \cdot \delta w + \mathcal{O}(w) $$
+Per approssimare il valore della \textit{loss function} con il nuovo valore del
+parametro $L(w + \delta w)$ si utilizza l'espansione di Taylor al primo ordine:
+\begin{equation}
+    L(w + \delta w) \approx L(w) + \frac{\partial L}{\partial w} \cdot \delta w + \mathcal{O}(w)
+\end{equation}
 
-Perturbazione del parametro $w$:
-$$ \delta w = -w \quad \text{(annullamento di quel parametro)} $$
-$$ L(w + \delta w) - L(w) \approx (-w) \cdot \frac{\partial L}{\partial w} $$
+Dato che l'operazione effettuata è la potatura, il valore del parametro
+perturbato è zero (in quanto viene tagliato) e di conseguenza $\delta w = -w$,
+da cui possiamo ottenere il valore approssimato della variazione di $L$:
+\begin{equation}
+    L(w + \delta w) - L(w) \approx (-w) \cdot \frac{\partial L}{\partial w}
+\end{equation}
 
-Applicato ad un gruppo di parametri $W_G$:
-$$ \Delta L(W_G) = \sum_{w \in W_G} \Delta L(w) = \sum_{w} -w \cdot \frac{\partial L}{\partial w} = - \sum_{w} w \cdot \frac{\partial L}{\partial w} $$
+Applicato ad un gruppo di parametri $W_g$ (ad esempio un intero neurone):
+\begin{equation}
+    \Delta L(W_g) = \sum_{w \in W_g} \Delta L(w) = \sum_{w \in W_g} -w \cdot \frac{\partial L}{\partial w} = - \sum_{w \in W_g} w \cdot \frac{\partial L}{\partial w}
+\end{equation}
 
-Ma non possiamo fare in questo modo perché la loro somma è $\Delta L(W_G)$, ma in questo modo non è detto che sia corretto. Un'approssimazione della \textbf{SOLUZIONE}: \\
-Un approccio più conservativo:
-$$ \hat{I}(W_G) = \sum_{w \in W_G} \Delta L(w)^2 \approx \sum_{w} \left( w \cdot \frac{\partial L}{\partial w} \right)^2 $$
+Nonostante l'approssimazione al primo ordine sia ampiamente sfruttata in
+letteratura per la sua semplicità computazionale, essa introduce un rischio
+sistematico nel caso del pruning strutturato. Si consideri un gruppo di
+parametri $W_g$ contenente due parametri $w_1$ e $w_2$. Nell'eventualità in cui
+le variazioni individuali della perdita siano opposte, ovvero $\Delta L(w_1) \approx - \Delta L(w_2)$, la loro somma algebrica risulterebbe prossima allo zero:
+\begin{equation}
+    \Delta L(W_g) = \sum_{w \in W_g} \Delta L(w) \approx 0
+\end{equation}
+Tale risultato porterebbe l'algoritmo a classificare erroneamente il gruppo $W_g$ come irrilevante, quando in realtà è possibile che i singoli parametri possiedano un'elevata sensibilità. Poiché $\Delta L$ è una stima lineare e locale della reale superficie della funzione di perdita, fare affidamento sulla somma dei contributi segnati espone a decisioni di potatura errate, dove componenti critiche vengono rimosse a causa di una reciproca compensazione dei gradienti. \newline
+La soluzione a questo problema può essere individuata in un approccio più conservativo, utilizzando i quadrati per permettere la somma dei contributi individuali (che saranno così sempre positivi): 
+\begin{equation}
+    \mathcal{I}(W_g) = \sum_{w \in W_g} \Delta L(w)^2 = \sum_{w \in W_g} \left ( w \cdot \frac{\partial L}{\partial w}\right )^2
+\end{equation} \newline
+Notare che il calcolo del gradiente $\frac{\partial L}{\partial w}$ non è banale, infatti accumulando semplicemente i gradienti, si rischia di incorrere in un fenomeno di cancellazione, ad esempio detti $b_1$ e $b_2$ i due (unici) \textit{batch} di dati in input, potrebbe accadere che:
+\begin{equation}
+    \frac{\partial L}{\partial w}(b_1) \approx - \frac{\partial L}{\partial w}(b_2) 
+\end{equation}
+Che in fase di accumulo, porterebbe ad un gradiente complessivo circa nullo, azzerando erroneamente l'importanza del parametro. \newline
+La soluzione a questo problema può essere facilmente individuata nell'utilizzo del valore atteso di $g^2 = \left (\partial {L} \over \partial {w} \right )^2$, da cui:  
+\begin{equation}
+    \mathcal{I}(w) = w^2 \cdot \mathbb{E}_{x \sim \mathcal{D}}[g^2] = w^2 \cdot \frac{1}{N} \sum_{i=1}^{N} g_i^2 \quad \text{(medie sui batch)} 
+\end{equation}
+con $N$ numero di \textit{batch} in input e $g_i$ il gradiente della funzione di perdita, calcolato sul \textit{batch} i-esimo. \newline
+Date queste premesse, è possibile definire la seguente metrica di importanza per un gruppo di parametri $W_g$:
+\begin{equation}
+    \mathcal{I}(W_g) =\sum_{w \in W_g} w^2 \cdot \mathbb{E}_{x \sim \mathcal{D}} \left[ \left( \frac{\partial L(x)}{\partial w} \right)^2 \right]
+\end{equation}
 
-Ma come calcolo $\frac{\partial L}{\partial w}$? Non conviene, perché supponiamo $\Delta L(w_1) = - \Delta L(w_2)$. \\
-Sui batch? Accumuliamo i gradienti? \\
-Sul batch 1: $\frac{\partial L}{\partial w}(b_1) = +1$, sul batch 2: $\frac{\partial L}{\partial w}(b_2) = -1$.
-$$ \frac{\partial L}{\partial w}_{tot} = +1 - 1 = 0 \implies I(w) = 0 $$
-Scorretto, il parametro è sensibile.
 
-\section*{SOLUZIONE}
-$$ I(w) = w^2 \cdot E[g^2] = w^2 \cdot \frac{1}{N} \sum_{i=1}^{N} g_i^2 \quad \text{(medie sui batch)} $$
+\section{Fisher Information Matrix ed Hessiano}
+La metrica di importanza derivata nella sezione precedente risulta corrisponde all'approssimazione diagonale della \textbf{Matrice di Informazione di Fisher}, così definita: 
+\begin{equation}
+    F(w) = \mathbb{E}_{x,y} \left[ \nabla L(y, f(x,w)) \cdot \nabla L(y, f(x,w))^T \right] \in \mathbb{R}^{|w| \times |w|}
+\end{equation}
+Nel quale i singoli elementi rappresentano la correlazione tra i gradienti dei singoli parametri:
+\begin{equation}
+     F(w_i, w_j) = \mathbb{E}_{x,y} \left[ \frac{\partial L}{\partial w_i} \cdot \frac{\partial L}{\partial w_j} \right]
+\end{equation} \newline
+Data la cardinalità dei parametri nei modelli \textit{Transformer}, il calcolo e la memorizzazione della matrice completa risultano computazionalmente proibitivi. Si assume pertanto l'indipendenza tra i parametri, operazione che equivale a considerare esclusivamente la diagonale della matrice:
+$$ F(w_i, w_j) = 0 \quad \text{ed} \quad F(w_i, w_i) = \mathbb{E}_{x,y} \left[ \left(\frac{\partial L}{\partial w_i} \right)^2 \right] $$ 
+Empiricamente, tale valore, detto \textbf{Informazione di Fisher}, viene stimato tramite una semplice media su un numero $N$ di \textit{batch} ($x_k$) in input:
+\begin{equation}
+    F(w) = \frac{1}{N} \sum_{k=1}^{N} \left( \frac{\partial L(x_k)}{\partial w} \right)^2
+\end{equation} \newline
+Notare che esiste un profondo legame tra l'\textit{Informazione di Fisher} e l'\textit{Hessiano} della funzione di perdita. Di seguito la dimostrazione formale, assumendo che la funzione di perdita sia la \textit{Negative Log-Likelihood}. \newline
+Consideriamo un problema di classificazione in cui il modello definisce una distribuzione di probabilità $p(y|x,w)$. Per la proprietà di normalizzazione, la somma delle probabilità su tutte le classi $y \in Y$ è unitaria:
+\begin{equation}
+    \sum_{y \in Y} p(y|x,w) = 1
+\end{equation}
+Derivando rispetto ai parametri $w$:
+\begin{equation}
+    \nabla_w \sum_{y} p(y|x,w) = 0 \implies \sum_{y} \nabla_w p(y|x,w) = 0
+\end{equation}
+Utilizzando la proprietà del log-gradient, per cui $\nabla p = p \frac{\nabla p}{p} = p \nabla \log(p)$, possiamo riscrivere l'espressione come:
+\begin{equation}
+    \sum_{y} p(y|x,w) \cdot \nabla_w \log p(y|x,w) = 0
+\end{equation}
+Per brevità di notazione, assumiamo $p(y|x,w) = p(y)$ e deriviamo una seconda volta rispetto a $w^T$:
+\begin{equation}
+    \nabla_w \sum_{y} p(y) \cdot \nabla_w \log p(y) = 0
+\end{equation}
+Applicando la regola del prodotto:
+\begin{equation}
+    \sum_{y} \left[ \nabla_w p(y) \cdot \nabla_w \log p(y)^T + p(y) \cdot \nabla_w^2 \log p(y) \right] = 0
+\end{equation}
+Sostituendo nuovamente $\nabla_w p(y) = p(y) \nabla_w \log p(y)$, otteniamo:
+\begin{equation}
+    \sum_{y} \left[ p(y) \nabla_w \log p(y) \cdot \nabla_w \log p(y)^T + p(y) \cdot \nabla_w^2 \log p(y) \right] = 0
+\end{equation}
+Raccogliendo $p(y)$, che rappresenta il peso del valore atteso $\mathbb{E}_y$, arriviamo alla relazione fondamentale:
+\begin{equation}
+    \sum_{y} p(y) \left[ \nabla_w \log p(y) \nabla_w \log p(y)^T + \nabla_w^2 \log p(y) \right] = 0
+\end{equation}
+Da cui segue che il valore atteso della Fisher Information e dell'Hessiano sono legati dalla relazione:
+\begin{equation}
+    \mathbb{E}_y [\text{Fisher}] + \mathbb{E}_y [\text{Hessiano}] = 0 \implies \mathbb{E}_y \left[ \nabla \log p \nabla \log p^T \right] = - \mathbb{E}_y \left[ \nabla^2 \log p \right]
+\end{equation}
+Nel nostro framework, utilizziamo come funzione di perdita la Cross-Entropy, che corrisponde alla Negative Log-Likelihood (NLL):
+\begin{equation}
+    \mathcal{L} = -\log p(y_{true}|x,w)
+\end{equation}
+Le derivate prima e seconda rispetto ai parametri sono dunque:
+\begin{equation}\nabla \mathcal{L} = -\nabla \log p, \quad \nabla^2 \mathcal{L} = -\nabla^2 \log p
+\end{equation}
+Sostituendo queste identità nella relazione precedente, otteniamo l'equivalenza finale:
+\begin{equation}
+    \mathbb{E}_y \left[ \nabla \mathcal{L} \cdot \nabla \mathcal{L}^T \right] = \mathbb{E}_y \left[ \nabla^2 \mathcal{L} \right]\end{equation}
+Il che implica, per le singole componenti diagonali:
+\begin{equation}
+    \mathbb{E} \left[ \left( \frac{\partial \mathcal{L}}{\partial w_i} \right)^2 \right] = \mathbb{E} \left[ \frac{\partial^2 \mathcal{L}}{\partial w_i^2} \right]
+\end{equation}
+Considerazioni PraticheSebbene la teoria garantisca che la matrice di Fisher approssimi l'Hessiano, è importante sottolineare che tale equivalenza è strettamente valida solo quando il modello rappresenta correttamente la distribuzione dei dati reali, ovvero in condizioni di convergenza.Nel metodo DL-DFBnB proposto, questa assunzione è considerata verificata poiché l'estrazione della metrica di importanza avviene su modelli pre-addestrati o immediatamente dopo una fase di fine-tuning. In tale stato di stabilità, la Fisher Information fornisce una stima affidabile della curvatura della perdita, permettendo di identificare con precisione i parametri la cui rimozione minimizza l'impatto sulle prestazioni del Transformer.
 
-\section*{GIUSTIFICAZIONE TEORICA}
-Di fatto sto usando la Fisher Information Matrix approssimando la ...
-$$ F(w) = E_{x,y} \left[ \nabla L(y, f(x,w)) \cdot \nabla L(y, f(x,w))^T \right] \in \mathbb{R}^{|w| \times |w|} $$
-$$ F(w_i, w_j) = E \left[ \frac{\partial L}{\partial w_i} \cdot \frac{\partial L}{\partial w_j} \right] $$
-
-Assumendo che i parametri siano indipendenti per questioni computazionali, abbiamo:
-$$ F(w_i, w_j) = 0 \quad \text{ed} \quad F(w_i, w_i) = E \left[ \left( \frac{\partial L}{\partial w_i} \right)^2 \right] $$
-Quindi:
-$$ F_w = \frac{1}{N} \sum \left( \frac{\partial L}{\partial w} \right)^2 $$
-dove i singoli campioni, noi lavoriamo su batch per parallelizzare i calcoli. \\
-Utilizzando Fisher Importance sto utilizzando l'informazione dell'Hessiano.
-
-\section*{COLLEGAMENTO CON L'HESSIANO}
-Assumiamo un problema di classificazione:
 $$ \sum_{y \in Y} p(y|x,w) = 1 $$
 Facciamo la derivata rispetto ai parametri:
 $$ \nabla_w \sum_{y} p(y|x,w) = 0 \implies \sum_{y} \nabla_w p(y|x,w) = 0 $$
@@ -149,18 +289,18 @@ $$ \sum_{y} \left[ p(y) \nabla_w \log p(y) \cdot \nabla_w \log p(y)^T + p(y) \cd
 $$ \sum_{y} p(y) \left[ \nabla_w \log p(y) \nabla_w \log p(y)^T + \nabla_w^2 \log p(y) \right] = 0 $$
 Da cui otteniamo la relazione tra Fisher e Hessiano.
 
-Se usiamo:
-$$ E_y[\text{Fisher}] + E_y[\text{Hessiano}] = 0 $$
-$$ E_y \left[ \nabla \log p \nabla \log p^T \right] = - E_y \left[ \nabla^2 \log p \right] $$
+Se usiamo: $$ E_y[\text{Fisher}] + E_y[\text{Hessiano}] = 0 $$ $$ E_y \left[
+        \nabla \log p \nabla \log p^T \right] = - E_y \left[ \nabla^2 \log p \right] $$
 
 Se usiamo come loss la cross-entropy, che è una Negative Log-Likelihood (NLL):
-$$ L = -\log p(y_{true}|x,w) $$
-Da cui:
-$$ \nabla L = -\nabla \log p $$
-$$ \nabla^2 L = \nabla(-\nabla \log p) = -\nabla^2 \log p $$
-Quindi:
-$$ E_y \left[ \nabla L \cdot \nabla L^T \right] = E_y \left[ \nabla^2 L \right] $$
-$$ E \left[ \frac{\partial L}{\partial w_i} \cdot \frac{\partial L}{\partial w_j} \right] = E \left[ \frac{\partial^2 L}{\partial w_i \partial w_j} \right] $$
+$$ L = -\log p(y_{true}|x,w) $$ Da cui: $$ \nabla L = -\nabla \log p $$ $$
+    \nabla^2 L = \nabla(-\nabla \log p) = -\nabla^2 \log p $$ Quindi: $$ E_y \left[
+        \nabla L \cdot \nabla L^T \right] = E_y \left[ \nabla^2 L \right] $$ $$ E
+    \left[ \frac{\partial L}{\partial w_i} \cdot \frac{\partial L}{\partial w_j}
+        \right] = E \left[ \frac{\partial^2 L}{\partial w_i \partial w_j} \right] $$
 Ovvero: Fisher approssima l'Hessiano.
 
-Nella pratica Fisher approssima l'Hessiano solo in situazioni in cui il modello rappresenta la distribuzione dei dati reali in convergenza. Nel nostro metodo possiamo assumere che sia vero solo subito dopo un fine-tuning, perché estraiamo i pesi di importanza.
+Nella pratica Fisher approssima l'Hessiano solo in situazioni in cui il modello
+rappresenta la distribuzione dei dati reali in convergenza. Nel nostro metodo
+possiamo assumere che sia vero solo subito dopo un fine-tuning, perché
+estraiamo i pesi di importanza.
