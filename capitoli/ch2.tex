@@ -41,7 +41,7 @@ Dove:
     \item $m \in \{0, 1\}^N$ è la maschera di pruning globale, con $N$ numero totale di parametri.
     \item La maschera è strutturata per blocchi: $m = \{m_{\mathrm{emb}}, m^{(1)}, \dots,
               m^{(i)}, \dots, m^{(L)}\}$, con $L$ numero di layer.
-    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{head}}, m_{\mathrm{attn}},
+    \item Per ogni blocco $i$: $m^{(i)} = \{m_{\mathrm{head}}, m_{\mathrm{q\_k}},
               m_{\mathrm{v\_proj}}, m_{\mathrm{mlp}}\}$.
     \item $\mathcal{A}(m, \theta, D)$ indica l'accuratezza del modello mascherato sul dataset $D$.
     \item $\mathcal{P}(m, \theta)$ rappresenta il numero di parametri attivi (non zero).
@@ -212,7 +212,7 @@ Date queste premesse, è possibile definire la seguente metrica di importanza pe
 
 
 \section{Fisher Information Matrix ed Hessiano}
-La metrica di importanza derivata nella sezione precedente risulta corrisponde all'approssimazione diagonale della \textbf{Matrice di Informazione di Fisher}, così definita: 
+La metrica di importanza derivata nella sezione precedente combina l'informazione fornita dalla magnitudo dei parametri con l'approssimazione diagonale della \textbf{Matrice di Informazione di Fisher}, estremamente utilizzata per determinare l'importanza dei parametri nelle reti neurali (ad es. \cite{molchanov2019importanceestimationneuralnetwork} \cite{theis2018fastergazepredictiondense}), così definita: 
 \begin{equation}
     F(w) = \mathbb{E}_{x,y} \left[ \nabla L(y, f(x,w)) \cdot \nabla L(y, f(x,w))^T \right] \in \mathbb{R}^{|w| \times |w|}
 \end{equation}
@@ -226,7 +226,7 @@ Empiricamente, tale valore, detto \textbf{Informazione di Fisher}, viene stimato
 \begin{equation}
     F(w) = \frac{1}{N} \sum_{k=1}^{N} \left( \frac{\partial L(x_k)}{\partial w} \right)^2
 \end{equation} \newline
-Notare che esiste un profondo legame tra l'\textit{Informazione di Fisher} e l'\textit{Hessiano} della funzione di perdita. Di seguito la dimostrazione formale, assumendo che la funzione di perdita sia la \textit{Negative Log-Likelihood}. \newline
+Notare che esiste un profondo legame tra l'\textit{Informazione di Fisher} e l'\textit{Hessiano} della funzione di perdita. Ad una simile conclusione sono giunti anche Theis et. al \cite{theis2018fastergazepredictiondense}. Di seguito la dimostrazione formale di questo legame, assumendo che la funzione di perdita sia la \textit{Negative Log-Likelihood}. \newline
 Consideriamo un problema di classificazione in cui il modello definisce una distribuzione di probabilità $p(y|x,w)$. Per la proprietà di normalizzazione, la somma delle probabilità su tutte le classi $y \in Y$ è unitaria:
 \begin{equation}
     \sum_{y \in Y} p(y|x,w) = 1
@@ -235,11 +235,11 @@ Derivando rispetto ai parametri $w$:
 \begin{equation}
     \nabla_w \sum_{y} p(y|x,w) = 0 \implies \sum_{y} \nabla_w p(y|x,w) = 0
 \end{equation}
-Utilizzando la proprietà del log-gradient, per cui $\nabla p = p \frac{\nabla p}{p} = p \nabla \log(p)$, possiamo riscrivere l'espressione come:
+Utilizzando una semplice proprietà delle derivate, per cui $\nabla p = p \frac{\nabla p}{p} = p \nabla \log(p)$, possiamo riscrivere l'espressione come:
 \begin{equation}
     \sum_{y} p(y|x,w) \cdot \nabla_w \log p(y|x,w) = 0
 \end{equation}
-Per brevità di notazione, assumiamo $p(y|x,w) = p(y)$ e deriviamo una seconda volta rispetto a $w^T$:
+Per brevità di notazione, assumiamo $p(y|x,w) = p(y)$ e deriviamo una seconda volta rispetto a $w$:
 \begin{equation}
     \nabla_w \sum_{y} p(y) \cdot \nabla_w \log p(y) = 0
 \end{equation}
@@ -251,56 +251,27 @@ Sostituendo nuovamente $\nabla_w p(y) = p(y) \nabla_w \log p(y)$, otteniamo:
 \begin{equation}
     \sum_{y} \left[ p(y) \nabla_w \log p(y) \cdot \nabla_w \log p(y)^T + p(y) \cdot \nabla_w^2 \log p(y) \right] = 0
 \end{equation}
-Raccogliendo $p(y)$, che rappresenta il peso del valore atteso $\mathbb{E}_y$, arriviamo alla relazione fondamentale:
+Raccogliendo $p(y)$, che rappresenta la distribuzione di probabilità della variabile aleatoria $y$ nel valore atteso $\mathbb{E}_y$, arriviamo alla relazione fondamentale:
 \begin{equation}
     \sum_{y} p(y) \left[ \nabla_w \log p(y) \nabla_w \log p(y)^T + \nabla_w^2 \log p(y) \right] = 0
 \end{equation}
-Da cui segue che il valore atteso della Fisher Information e dell'Hessiano sono legati dalla relazione:
+Da questa relazione, si può notare come $\nabla_w \log p(y) \nabla_w \log p(y)^T$ sia proprio il termine legato alla Matrice di Fisher, mentre $\nabla_w^2 \log p(y)$ è il termine legato all'Hessiano. In particolare, si evince che il valore atteso della Fisher Information e dell'Hessiano sono legati dalla relazione:
 \begin{equation}
-    \mathbb{E}_y [\text{Fisher}] + \mathbb{E}_y [\text{Hessiano}] = 0 \implies \mathbb{E}_y \left[ \nabla \log p \nabla \log p^T \right] = - \mathbb{E}_y \left[ \nabla^2 \log p \right]
+    \mathbb{E}_{x,y} [\text{Fisher}] + \mathbb{E}_{x,y} [\text{Hessiano}] = 0 \implies \mathbb{E}_{x,y} \left[ \nabla \log p \nabla \log p^T \right] = - \mathbb{E}_{x, y} \left[ \nabla^2 \log p \right]
 \end{equation}
-Nel nostro framework, utilizziamo come funzione di perdita la Cross-Entropy, che corrisponde alla Negative Log-Likelihood (NLL):
+Considerato che è assunto l'utilizzo della funzione di perdita Cross-Entropy, che corrisponde alla Negative Log-Likelihood (NLL) nel caso della classificazione:
 \begin{equation}
-    \mathcal{L} = -\log p(y_{true}|x,w)
+    L = -\log p(y_{true}|x,w)
 \end{equation}
 Le derivate prima e seconda rispetto ai parametri sono dunque:
-\begin{equation}\nabla \mathcal{L} = -\nabla \log p, \quad \nabla^2 \mathcal{L} = -\nabla^2 \log p
+\begin{equation}\nabla L = -\nabla \log p, \quad \nabla^2 L = -\nabla^2 \log p
 \end{equation}
 Sostituendo queste identità nella relazione precedente, otteniamo l'equivalenza finale:
 \begin{equation}
-    \mathbb{E}_y \left[ \nabla \mathcal{L} \cdot \nabla \mathcal{L}^T \right] = \mathbb{E}_y \left[ \nabla^2 \mathcal{L} \right]\end{equation}
+    \mathbb{E}_{x,y} \left[ \nabla L \cdot \nabla L^T \right] = \mathbb{E}_{x,y} \left[ \nabla^2 L \right]\end{equation}
 Il che implica, per le singole componenti diagonali:
 \begin{equation}
-    \mathbb{E} \left[ \left( \frac{\partial \mathcal{L}}{\partial w_i} \right)^2 \right] = \mathbb{E} \left[ \frac{\partial^2 \mathcal{L}}{\partial w_i^2} \right]
-\end{equation}
-Considerazioni PraticheSebbene la teoria garantisca che la matrice di Fisher approssimi l'Hessiano, è importante sottolineare che tale equivalenza è strettamente valida solo quando il modello rappresenta correttamente la distribuzione dei dati reali, ovvero in condizioni di convergenza.Nel metodo DL-DFBnB proposto, questa assunzione è considerata verificata poiché l'estrazione della metrica di importanza avviene su modelli pre-addestrati o immediatamente dopo una fase di fine-tuning. In tale stato di stabilità, la Fisher Information fornisce una stima affidabile della curvatura della perdita, permettendo di identificare con precisione i parametri la cui rimozione minimizza l'impatto sulle prestazioni del Transformer.
-
-$$ \sum_{y \in Y} p(y|x,w) = 1 $$
-Facciamo la derivata rispetto ai parametri:
-$$ \nabla_w \sum_{y} p(y|x,w) = 0 \implies \sum_{y} \nabla_w p(y|x,w) = 0 $$
-Sappiamo che:
-$$ \nabla p = p \frac{\nabla p}{p} = p \nabla \log(p) $$
-Allora:
-$$ \sum_{y} p(y|x,w) \cdot \nabla_w \log p(y|x,w) = 0 $$
-Deriviamo un'altra volta (assumendo $p(y|w,x) = p(y)$ per brevità di notazione):
-$$ \nabla_w \sum_{y} p(y|x,w) \cdot \nabla_w \log p(y|x,w) = 0 $$
-$$ \sum_{y} \left[ \nabla_w p(y) \cdot \nabla_w \log p(y)^T + p(y) \cdot \nabla_w^2 \log p(y) \right] = 0 $$
-$$ \sum_{y} \left[ p(y) \nabla_w \log p(y) \cdot \nabla_w \log p(y)^T + p(y) \cdot \nabla_w^2 \log p(y) \right] = 0 $$
-$$ \sum_{y} p(y) \left[ \nabla_w \log p(y) \nabla_w \log p(y)^T + \nabla_w^2 \log p(y) \right] = 0 $$
-Da cui otteniamo la relazione tra Fisher e Hessiano.
-
-Se usiamo: $$ E_y[\text{Fisher}] + E_y[\text{Hessiano}] = 0 $$ $$ E_y \left[
-        \nabla \log p \nabla \log p^T \right] = - E_y \left[ \nabla^2 \log p \right] $$
-
-Se usiamo come loss la cross-entropy, che è una Negative Log-Likelihood (NLL):
-$$ L = -\log p(y_{true}|x,w) $$ Da cui: $$ \nabla L = -\nabla \log p $$ $$
-    \nabla^2 L = \nabla(-\nabla \log p) = -\nabla^2 \log p $$ Quindi: $$ E_y \left[
-        \nabla L \cdot \nabla L^T \right] = E_y \left[ \nabla^2 L \right] $$ $$ E
-    \left[ \frac{\partial L}{\partial w_i} \cdot \frac{\partial L}{\partial w_j}
-        \right] = E \left[ \frac{\partial^2 L}{\partial w_i \partial w_j} \right] $$
-Ovvero: Fisher approssima l'Hessiano.
-
-Nella pratica Fisher approssima l'Hessiano solo in situazioni in cui il modello
-rappresenta la distribuzione dei dati reali in convergenza. Nel nostro metodo
-possiamo assumere che sia vero solo subito dopo un fine-tuning, perché
-estraiamo i pesi di importanza.
+    \mathbb{E}_{x,y} \left[ \left( \frac{\partial L}{\partial w_i} \right)^2 \right] = \mathbb{E}_{x,y} \left[ \frac{\partial^2 L}{\partial w_i^2} \right]
+\end{equation} 
+\subsection*{Considerazioni teoriche}
+Sebbene la teoria garantisca che la matrice di Fisher approssimi l'Hessiano, è importante sottolineare che tale equivalenza è strettamente valida solo quando il modello rappresenta correttamente la distribuzione dei dati reali, ovvero in condizioni di convergenza, come descritto approfonditamente da Kunstner et al. \cite{kunstner2020limitationsempiricalfisherapproximation}. Nel metodo proposto, questa assunzione è considerata verificata poiché l'estrazione della metrica di importanza avviene su modelli che sono stati sottoposti ad una fase di fine-tuning. In tale stato di stabilità e convergenza, la \textit{Fisher Information} fornisce una stima affidabile della curvatura della funzione di perdita, permettendo di identificare con precisione i parametri la cui rimozione minimizza l'impatto sulle prestazioni del Transformer.
