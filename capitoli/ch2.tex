@@ -1,4 +1,5 @@
 \chapter{Formulazione matematica del problema}
+\label{cap:teoria}
 Un problema di Neural Architecture Search (NAS) consiste in una ricerca in uno
 spazio degli stati, a partire da una architettura di partenza, detta
 \textbf{Supernet}, per identificare, tra tutte le possibili \textbf{Subnet},
@@ -103,7 +104,7 @@ prestazioni del modello. \newline Al fine di individuare le componenti meno
 rilevanti per le capacità predittive del modello, viene adottata una metrica di
 importanza basata sulla sensibilità della funzione di perdita rispetto ai
 parametri. Per un singolo parametro $w$, l'importanza è definita come:
-\begin{equation}
+\begin{equation} \label{eq:metrica_importanza}
     \mathcal{I}(w) = w^2 \cdot \mathbb{E}_{x \sim \mathcal{D}} \left[ \left( \frac{\partial \mathcal{L}(x; \theta^*)}{\partial w} \right)^2 \right]
 \end{equation}
 Dove $\mathcal{L}(x; \theta^*)$ è proprio la funzione di perdita, calcolata a partire dai parametri attivi $\theta^*$, sul \textit{Search Set} ($x$).
