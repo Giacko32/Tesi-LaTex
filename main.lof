@@ -2,6 +2,13 @@
 \babel@toc {italian}{}\relax 
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Visualizzazione delle matrici dei pesi mascherate dall'azione di \textit {MLP Pruning}.}}{11}{figure.caption.4}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Visualizzazione delle matrici dei pesi mascherate dall'azione di \textit {QK Pruning}, nella \textit {MHSA}.}}{12}{figure.caption.5}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Visualizzazione delle matrici dei pesi mascherate dall'azione di \textit {VProj Pruning}, nella \textit {MHSA}.}}{13}{figure.caption.6}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Visualizzazione delle matrici dei pesi mascherate dall'azione di \textit {Head Pruning}, nella \textit {MHSA}.}}{14}{figure.caption.7}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Visualizzazione delle matrici dei pesi mascherate dall'azione di \textit {Emb Pruning}, nella \textit {MHSA}.}}{15}{figure.caption.8}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Visualizzazione delle matrici dei pesi mascherate dall'azione di \textit {Emb Pruning}, nella \textit {FFN}.}}{15}{figure.caption.9}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Esempio di immagini dal dataset CIFAR100.}}{25}{figure.caption.11}%
 \addvspace {10\p@ }
