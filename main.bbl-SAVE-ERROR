@@ -1,0 +1,250 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{hinton2015distilling}{misc}{}{}
+      \name{author}{3}{}{%
+        {{hash=9a8750ccdb2a4cf14d2655face1ce016}{%
+           family={Hinton},
+           familyi={H\bibinitperiod},
+           given={Geoffrey},
+           giveni={G\bibinitperiod}}}%
+        {{hash=494b568c5dc85ba8f3f409635f9c5f25}{%
+           family={Vinyals},
+           familyi={V\bibinitperiod},
+           given={Oriol},
+           giveni={O\bibinitperiod}}}%
+        {{hash=62f954323339abeba6c6a240e9d2855b}{%
+           family={Dean},
+           familyi={D\bibinitperiod},
+           given={Jeff},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{fullhash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{fullhashraw}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{bibnamehash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{authorbibnamehash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{authornamehash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{authorfullhash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \strng{authorfullhashraw}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{stat.ML}
+      \field{eprinttype}{arXiv}
+      \field{title}{Distilling the Knowledge in a Neural Network}
+      \field{year}{2015}
+      \verb{eprint}
+      \verb 1503.02531
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1503.02531
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1503.02531
+      \endverb
+    \endentry
+    \entry{kunstner2020limitationsempiricalfisherapproximation}{misc}{}{}
+      \name{author}{3}{}{%
+        {{hash=f0c2705b092ac56a9a73ea2f33c140ab}{%
+           family={Kunstner},
+           familyi={K\bibinitperiod},
+           given={Frederik},
+           giveni={F\bibinitperiod}}}%
+        {{hash=020c0f272a60ab45f947bf957e370eee}{%
+           family={Balles},
+           familyi={B\bibinitperiod},
+           given={Lukas},
+           giveni={L\bibinitperiod}}}%
+        {{hash=0fc3fa397d36e1fb833fdafa98a2b96f}{%
+           family={Hennig},
+           familyi={H\bibinitperiod},
+           given={Philipp},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{bcc5098ffe0567b78941855258a0286a}
+      \strng{fullhash}{bcc5098ffe0567b78941855258a0286a}
+      \strng{fullhashraw}{bcc5098ffe0567b78941855258a0286a}
+      \strng{bibnamehash}{bcc5098ffe0567b78941855258a0286a}
+      \strng{authorbibnamehash}{bcc5098ffe0567b78941855258a0286a}
+      \strng{authornamehash}{bcc5098ffe0567b78941855258a0286a}
+      \strng{authorfullhash}{bcc5098ffe0567b78941855258a0286a}
+      \strng{authorfullhashraw}{bcc5098ffe0567b78941855258a0286a}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Limitations of the Empirical Fisher Approximation for Natural Gradient Descent}
+      \field{year}{2020}
+      \verb{eprint}
+      \verb 1905.12558
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1905.12558
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1905.12558
+      \endverb
+    \endentry
+    \entry{molchanov2019importanceestimationneuralnetwork}{misc}{}{}
+      \name{author}{5}{}{%
+        {{hash=8ac65f0c6a6050a1bdbe904e1f4a1cf9}{%
+           family={Molchanov},
+           familyi={M\bibinitperiod},
+           given={Pavlo},
+           giveni={P\bibinitperiod}}}%
+        {{hash=8b2c2efa89daa5da458edad81ab5c0e8}{%
+           family={Mallya},
+           familyi={M\bibinitperiod},
+           given={Arun},
+           giveni={A\bibinitperiod}}}%
+        {{hash=383607c1407181bff13dce5ec57621ec}{%
+           family={Tyree},
+           familyi={T\bibinitperiod},
+           given={Stephen},
+           giveni={S\bibinitperiod}}}%
+        {{hash=52194ee9e5b40e6556c5e97ab90020e8}{%
+           family={Frosio},
+           familyi={F\bibinitperiod},
+           given={Iuri},
+           giveni={I\bibinitperiod}}}%
+        {{hash=08129312c062dd971f82ea43031cdef0}{%
+           family={Kautz},
+           familyi={K\bibinitperiod},
+           given={Jan},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{055d297369a35d168e27eaaedf364f12}
+      \strng{fullhash}{dcc607b3326d89d841cf476c3f707ed6}
+      \strng{fullhashraw}{dcc607b3326d89d841cf476c3f707ed6}
+      \strng{bibnamehash}{dcc607b3326d89d841cf476c3f707ed6}
+      \strng{authorbibnamehash}{dcc607b3326d89d841cf476c3f707ed6}
+      \strng{authornamehash}{055d297369a35d168e27eaaedf364f12}
+      \strng{authorfullhash}{dcc607b3326d89d841cf476c3f707ed6}
+      \strng{authorfullhashraw}{dcc607b3326d89d841cf476c3f707ed6}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Importance Estimation for Neural Network Pruning}
+      \field{year}{2019}
+      \verb{eprint}
+      \verb 1906.10771
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1906.10771
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1906.10771
+      \endverb
+    \endentry
+    \entry{nonlinear_optim}{misc}{}{}
+      \name{author}{2}{}{%
+        {{hash=0eab8a33e5cad3091b54747598cf77f9}{%
+           family={Murray},
+           familyi={M\bibinitperiod},
+           given={Walter},
+           giveni={W\bibinitperiod}}}%
+        {{hash=634f3ff8f1918379abd11517bf732069}{%
+           family={Ng},
+           familyi={N\bibinitperiod},
+           given={Kien-Ming},
+           giveni={K\bibinithyphendelim M\bibinitperiod}}}%
+      }
+      \strng{namehash}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{fullhash}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{fullhashraw}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{bibnamehash}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{authorbibnamehash}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{authornamehash}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{authorfullhash}{d9ce53a090b0ac031749a93e4843f9ba}
+      \strng{authorfullhashraw}{d9ce53a090b0ac031749a93e4843f9ba}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{An algorithm for nonlinear optimization problems with binary variables}
+      \field{year}{2010}
+      \verb{urlraw}
+      \verb https://link.springer.com/article/10.1007/s10589-008-9218-1
+      \endverb
+      \verb{url}
+      \verb https://link.springer.com/article/10.1007/s10589-008-9218-1
+      \endverb
+    \endentry
+    \entry{theis2018fastergazepredictiondense}{misc}{}{}
+      \name{author}{4}{}{%
+        {{hash=5314c7da92c0dd8f017ad76fc7a24e02}{%
+           family={Theis},
+           familyi={T\bibinitperiod},
+           given={Lucas},
+           giveni={L\bibinitperiod}}}%
+        {{hash=acc6e8528317d21c4e01130e36974391}{%
+           family={Korshunova},
+           familyi={K\bibinitperiod},
+           given={Iryna},
+           giveni={I\bibinitperiod}}}%
+        {{hash=3feeeebee8583ecc208f7fb3e0a55068}{%
+           family={Tejani},
+           familyi={T\bibinitperiod},
+           given={Alykhan},
+           giveni={A\bibinitperiod}}}%
+        {{hash=06edff712db50810cceb7f6ad2d53ecf}{%
+           family={Huszár},
+           familyi={H\bibinitperiod},
+           given={Ferenc},
+           giveni={F\bibinitperiod}}}%
+      }
+      \strng{namehash}{0c15bce287f483d6b9e7820f6784a554}
+      \strng{fullhash}{52da5e87fc081bc36d0b989cfcc68a30}
+      \strng{fullhashraw}{52da5e87fc081bc36d0b989cfcc68a30}
+      \strng{bibnamehash}{52da5e87fc081bc36d0b989cfcc68a30}
+      \strng{authorbibnamehash}{52da5e87fc081bc36d0b989cfcc68a30}
+      \strng{authornamehash}{0c15bce287f483d6b9e7820f6784a554}
+      \strng{authorfullhash}{52da5e87fc081bc36d0b989cfcc68a30}
+      \strng{authorfullhashraw}{52da5e87fc081bc36d0b989cfcc68a30}
+      \field{sortinit}{T}
+      \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Faster gaze prediction with dense networks and Fisher pruning}
+      \field{year}{2018}
+      \verb{eprint}
+      \verb 1801.05787
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1801.05787
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1801.05787
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

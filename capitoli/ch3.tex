@@ -11,7 +11,30 @@ Notare che è possibile interpretare il framework di compressione come un \textb
 \section{Framework di Compressione Iterativo}
 Una volta definita la strategia di gestione dei dati, è necessario definire la struttura del framework di compressione iterativo, in particolare cosa avviene ad ogni iterazione. \newline
 Inizialmente viene campionato il \textit{Search Set}, in modo tale da poterlo utilizzare in fase di ricerca \textit{NAS}. Successivamente inizia la prima fase dell'iterazione: il \textbf{Pruning}. La prima operazione che viene eseguita è l'algoritmo di ricerca \textit{BnB}, che verrà analizzato nella sezione \ref{section:metodo_ricerca}, il quale restituisce lo stato migliore individuato, ovvero una maschera di \textit{pruning} per l'intero modello. \newline
-A questo punto la maschera viene applicata al modello, e questo viene successivamente ricostruito istanziando tutti i tensori dei parametri ed effettuando una copia solo di quelli non tagliati in fase di ricerca. Viene quindi creato un nuovo modello \textit{ViT}, del quale sono state effettivamente ridotte le dimensioni dei tensori dei parametri e questo risulta fondamentale perché implica che il framework proposto non si limita ad applicare delle maschere di \textit{pruning}, che non avrebbero alcun impatto sulle prestazioni effettive del modello sull'hardware, bensì produce dei nuovi modelli di dimensioni realmente minori, con prestazioni realmente superiori. In particolare viene ridotta la latenza in fase di inferenza ma anche la memoria necessaria (VRAM) per utilizzare il modello.
-
+A questo punto la maschera viene applicata al modello, e questo viene successivamente ricostruito istanziando tutti i tensori dei parametri ed effettuando una copia solo di quelli non tagliati in fase di ricerca. Viene quindi creato un nuovo modello \textit{ViT}, del quale sono state effettivamente ridotte le dimensioni e questo risulta fondamentale perché implica che il framework proposto non si limita ad applicare delle maschere di \textit{pruning}, che non avrebbero alcun impatto sulle prestazioni effettive del modello sull'hardware, bensì produce dei nuovi modelli di dimensioni realmente minori, con prestazioni realmente superiori. In particolare viene ridotta la latenza in fase di inferenza ma anche la memoria necessaria (VRAM) per utilizzare il modello. \newline
+Una volta ricostruito il modello, dato che la fase di \textit{Pruning}, avrà introdotto un danno alle performance del modello, è necessario passare alla successiva fase di \textbf{Recovery Fine Tuning}. Si tratta di una serie di epoche di addestramento, volte a consentire ai parametri rimasti del modello di riadattarsi, per poter recuperare l'accuratezza perduta. Risulta fondamentale in questa fase la possibilità di introdurre la \textit{Knowledge Distillation} tramite il modello originale non compresso, che permette tipicamente un recupero più efficace della performance del modello. \newline
+\begin{algorithm}[H]
+\caption{Framework di Compressione Iterativo}
+\label{alg:framework_completo}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Modello pre-addestrato $M_0$, Dataset $\mathcal{D}$, Iterazioni $N$, Epoche di Fine Tuning $K$
+    \State \textbf{Output:} Modello compresso e ottimizzato $M$
+    \Statex
+    \State $M_{teacher} \gets M_0$ \Comment{Modello originale per la Distillazione}
+    \State $M \gets M_0$
+    
+    \For{$n \gets 1$ \textbf{to} $N$}
+        \State \textbf{1. Fase di Campionamento e Ricerca:}
+        \State $\mathcal{D}_{search} \gets \text{campiona\_search\_set}(\mathcal{D}_{train})$ \Comment{Estrazione dinamica del set di ricerca}
+        \State $m_{pruning} \gets \text{pruning\_NAS}(M, \mathcal{D}_{search})$ \Comment{NAS per ottenere la maschera di pruning}
+        \State $M_{pruned} \gets \text{comprimi\_ViT}(M, m_{pruning})$ \Comment{ricostruzione del modello compresso}
+        \State \textbf{2. Fase di Recovery Fine-Tuning:}
+        \State $M \gets M_{pruned}$ 
+        \State $M \gets \text{FineTuning}(M, M_{teacher}, \mathcal{D}_{train}, \mathcal{D}_{val}, K)$
+    \EndFor
+    
+    \State \Return $M$
+\end{algorithmic}
+\end{algorithm}
 \section{Algoritmo di Ricerca adottato}
 \label{section:metodo_ricerca}
