@@ -17,18 +17,15 @@ Una volta ricostruito il modello, dato che la fase di \textit{Pruning}, avrà in
 \caption{Framework di Compressione Iterativo}
 \label{alg:framework_completo}
 \begin{algorithmic}[1]
-    \State \textbf{Input:} Modello pre-addestrato $M_0$, Dataset $\mathcal{D}$, Iterazioni $N$, Epoche di Fine Tuning $K$
-    \State \textbf{Output:} Modello compresso e ottimizzato $M$
-    \Statex
-    \State $M_{teacher} \gets M_0$ \Comment{Modello originale per la Distillazione}
+    \State \textbf{Input:} Pre-trained model $M_0$, Dataset $\mathcal{D}$, Iterations $N$, Fine Tuning epochs $K$
+    \State \textbf{Output:} Compressed and optimized model $M$
+    \State $M_{teacher} \gets M_0$ \Comment{Original model used for distillation}
     \State $M \gets M_0$
     
     \For{$n \gets 1$ \textbf{to} $N$}
-        \State \textbf{1. Fase di Campionamento e Ricerca:}
-        \State $\mathcal{D}_{search} \gets \text{campiona\_search\_set}(\mathcal{D}_{train})$ \Comment{Estrazione dinamica del set di ricerca}
-        \State $m_{pruning} \gets \text{pruning\_NAS}(M, \mathcal{D}_{search})$ \Comment{NAS per ottenere la maschera di pruning}
-        \State $M_{pruned} \gets \text{comprimi\_ViT}(M, m_{pruning})$ \Comment{ricostruzione del modello compresso}
-        \State \textbf{2. Fase di Recovery Fine-Tuning:}
+        \State $\mathcal{D}_{search} \gets \text{sample\_search\_set}(\mathcal{D}_{train})$ \Comment{Dynamic sampling of the search set}
+        \State $m_{pruning} \gets \text{pruning\_NAS}(M, \mathcal{D}_{search})$ \Comment{NAS to obtain pruning mask}
+        \State $M_{pruned} \gets \text{compress\_ViT}(M, m_{pruning})$ \Comment{Rebuilding ViT}
         \State $M \gets M_{pruned}$ 
         \State $M \gets \text{FineTuning}(M, M_{teacher}, \mathcal{D}_{train}, \mathcal{D}_{val}, K)$
     \EndFor
@@ -36,5 +33,87 @@ Una volta ricostruito il modello, dato che la fase di \textit{Pruning}, avrà in
     \State \Return $M$
 \end{algorithmic}
 \end{algorithm}
-\section{Algoritmo di Ricerca adottato}
-\label{section:metodo_ricerca}
+
+\section{Implementazione dell'algoritmo di ricerca}
+In questa sezione viene dettagliata l'implementazione della fase di ricerca con algoritmo \textit{Branch and Bound}, che viene eseguito all'inizio di ogni iterazione di compressione. \newline
+\begin{algorithm}[H]
+\caption{Ricerca NAS via Depth-First Branch and Bound a profondità limitata}
+\label{alg:nas_search}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Base Model $M$, Depth Limit $D_{max}$
+    \State \textbf{Output:} Optimal State $s_{best}$, Optimal State value $v_{best}$
+    \State $s_{init} \gets \text{build\_initial\_state}()$
+    \State $stack \gets [s_{init}]$ \Comment{Stack setup}
+    \State $M_{work} \gets \text{copy}(M)$
+    \State $s_{best} \gets s_{init}$
+    \State $v_{best} \gets -\infty$
+    \While{$stack$ is not empty}
+        \State $s_{curr} \gets stack.\text{pop}()$
+        \State $\text{reset\_masks}(M_{work})$
+        \State $\text{apply\_masks}(M_{work}, s_{curr})$
+        \State $accuracy, active\_params \gets \text{evaluate}(M_{work})$ \Comment{Subnet evaluation}
+        \State $v_{curr} \gets \text{compute\_obj}(acc, active\_params)$
+
+        \If{$v_{curr} > v_{best}$}
+            \State $v_{best}, s_{best} \gets v_{curr}, s_{curr}$
+        \EndIf
+        \If{$D_{max}$ reached \textbf{OR} $\text{Bound}(v_{curr}, v_{best})$}
+            \State \textbf{continue} \Comment{Bound or depth limit reached}
+        \EndIf
+        \State // \textit{Branching}
+        \State $next\_states \gets \text{Branch}(s_{curr}, M_{work})$
+        \For{$s$ in $next\_states$}
+            \State $stack.\text{push}(s)$
+        \EndFor
+    \EndWhile
+    
+    \State \Return $s_{best}, v_{best}$
+\end{algorithmic}
+\end{algorithm}
+Al fine di evitare una eccessiva occupazione di memoria, il processo di ricerca fa utilizzo di stati costituiti come strutture dati a dizionario, invece che vere e proprie copie del modello originale. All'interno di ogni stato è presente una struttura che, per ogni blocco \textit{Transformer} contiene tutte le dimensioni rimosse per ogni tipologia di struttura (MLP, QK, ecc\dots), oltre ad una informazione generale su quali dimensioni di \textit{Embedding} sono state tagliate globalmente. \newline
+A partire da questa struttura dati è possibile agire su una serie di maschere di \textit{pruning} che vengono applicate al modello, permettendo così di ottenere la vera e propria \textit{subnet}. Per garantire la massima efficienza queste maschere vengono applicate ad un'unica copia del modello iniziale, che, alla fine di ogni esplorazione dello stato vede le proprie maschere reimpostate, per poter applicare i tagli previsti dal successivo stato della ricerca.
+
+
+
+\section{Implementazione delle azioni di Pruning}
+\label{section:action_impl}
+Data la formulazione matematica delle azioni di ricerca, presentata nella sezione \ref{section:math_actions}, in fase di implementazione, considerato l'elevatissimo numero di dimensioni nel modello, viene addottato un approccio più efficiente.
+In particolare, non vengono considerate realmente tutte le possibili combinazioni di dimensioni a $K$ a $K$ di un componente del modello, poiché, dato che è di interesse la somma delle importanze delle singole dimensioni, è sufficiente considerare le $K$ dimensioni le cui importanze sono minime. In particolare, per tutte quelle azioni che agiscono all'interno di un singolo blocco (ovvero tutte tranne il \textit{Pruning} della dimensione di \textit{Embedding}), vengono identificate, per ogni blocco \textit{Transformer} le $K$ dimensioni con il minor valore di importanza. Successivamente, viene selezionato il blocco, il cui gruppo di dimensioni ottimali, hanno una importanza complessiva minore. Questo tipo di approccio semplifica e rende la risoluzione del problema più efficiente. \newline
+Per quanto riguarda il \textit{Pruning} della dimensione di \textit{Embedding}, l'approccio adottato è il medesimo, con la differenza che, essendo questa una dimensione globale, non vengono considerati singolarmente i blocchi ma complessivamente, riducendo l'algoritmo all'individuazione dei $K$ minimi valori di importanza sull'intero modello. \newline
+\begin{algorithm}[H]
+\caption{Selezione del gruppo di dimensioni ottimale per il taglio}
+\label{alg:find_target_gen}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Model $M$, Chunk size $K$, Target component $T$
+    \State \textbf{Output:} $(\text{block}, [\text{dimension indices}])$ Target dimension group
+    \State $v_{best\_imp} \gets \infty$
+    \State $target \gets \text{null}$
+    
+    \For{every block $b$ in $M.blocks$}
+        \If{number of dimensions in $T(b) < K$}
+            \State \textbf{continue}
+        \EndIf
+        
+        \State $candidates \gets \emptyset$
+        
+        \For{every dimension $d$ in $T(b)$}
+            \If{$d$ is already pruned}
+                \State \textbf{continue}
+            \EndIf
+            \State $imp_d \gets \text{importance\_score}(d)$
+            \State $candidates.\text{append}((d, imp_d))$
+        \EndFor
+        
+        \State $candidates \gets$ sort($candidates$, ascending = True) 
+        \State $chunk \gets candidates[0 : K]$
+        \State $v_{block\_imp} \gets \sum_{(d, i) \in chunk} i$
+        
+        \If{$v_{block\_imp} < v_{best\_imp}$}
+            \State $v_{best\_imp} \gets v_{local\_imp}$
+            \State $target \gets (b, \text{chunk.indices})$
+        \EndIf
+    \EndFor
+    
+    \State \Return $target$
+\end{algorithmic}
+\end{algorithm}

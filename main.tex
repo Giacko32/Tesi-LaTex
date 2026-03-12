@@ -53,7 +53,8 @@
 \usepackage{hyperref}                           % Deve essere caricato per ultimo
 
 \input{impostazioni-tesi}                       % File con le impostazioni della tesi
-\input{abstract-env}                            % Definizione dell'ambiente myabstract
+\input{abstract-env}
+\addbibresource{bibliografia.bib}                   % Definizione dell'ambiente myabstract
 
 \begin{document}
 
@@ -117,6 +118,7 @@
 
 %% Bibliografia
 \clearpage
+
 \phantomsection
 \addcontentsline{toc}{chapter}{\bibname}
 \markboth{Bibliografia}{}
